@@ -23,7 +23,9 @@ Oben rechts siehst du immer den Sync-Stand:
 ### 1. Server auf dem PC zu Hause
 
 1. **Node.js** installieren: https://nodejs.org → „LTS“ herunterladen und installieren.
-2. Den Ordner `baustellen` auf den PC kopieren, z.B. nach `C:\Baustellen`.
+2. Die App herunterladen: auf GitHub in diesem Repository **„<> Code“ → „Download ZIP“** klicken, die ZIP-Datei mit Rechtsklick
+   → **„Alle extrahieren…“** entpacken und den Ordner dorthin kopieren, wo er bleiben soll, z.B. nach `C:\Baustellen`.
+   Bei einem Update die neuen Dateien einfach darüberkopieren. Der Ordner `daten` mit deinen Daten bleibt dabei erhalten.
 3. **Windows:** Doppelklick auf `start-windows.bat`.
    **Mac/Linux:** `./start.sh` ausführen.
 4. Im Fenster stehen dann die Adressen, z.B.:
@@ -95,7 +97,7 @@ Das gleiche Passwort trägst du dann in der App unter **⚙ Einstellungen → Sy
 
 ## Datensicherung
 
-- Der Server speichert alles in `baustellen/daten/daten.json`, die Fotos als normale JPG-Dateien in `daten/fotos/`.
+- Der Server speichert alles in `daten/daten.json`, die Fotos als normale JPG-Dateien in `daten/fotos/`.
   Gelöschte Fotos verschiebt er nach `daten/fotos/geloescht/`, sie sind also nicht sofort weg.
 - Von `daten.json` legt er **jeden Tag** eine Kopie in `daten/sicherungen/` ab. Die letzten 30 Tage bleiben erhalten.
 - 👉 Den **ganzen** Ordner `daten` (inklusive Fotos) ab und zu auf einen USB-Stick oder in eine Cloud kopieren.
