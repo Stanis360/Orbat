@@ -138,6 +138,41 @@ button.karte { cursor: pointer; }
 .plan-bild { display: block; aspect-ratio: 4/3; background: var(--bg); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
 .plan-vorschau { width: 100%; height: 100%; display: block; color: var(--text); }
 
+/* ---------- Preisliste, Material, Bestellungen ---------- */
+.zaehler { background: var(--akzent); color: #fff; border-radius: 99px; padding: 0 7px; font-size: 13px; min-width: 22px; text-align: center; }
+.kennzahlen .warn { color: var(--orange); font-weight: 600; }
+.eintrag.material { cursor: pointer; }
+.eintrag .rechts { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.mstatus {
+  border: 0; cursor: pointer; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; white-space: nowrap;
+  background: color-mix(in srgb, var(--leise) 18%, transparent); color: var(--leise);
+}
+.mstatus.zu_bestellen { background: color-mix(in srgb, var(--rot) 16%, transparent); color: var(--rot); }
+.mstatus.bestellt { background: color-mix(in srgb, var(--orange) 20%, transparent); color: var(--orange); }
+.mstatus.vorhanden { background: color-mix(in srgb, var(--gruen) 18%, transparent); color: var(--gruen); }
+.filter { flex-wrap: wrap; }
+h2 .klein-btn { min-height: 34px; padding: 0 12px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--text); }
+h2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.leer.klein { padding: 16px; font-size: 14px; }
+.aufschlag { font-size: 14px; color: var(--leise); margin: 0 4px 10px; }
+.aufschlag input { width: 64px; min-height: 36px; padding: 4px 8px; font-size: 15px; border: 1px solid var(--linie); border-radius: 8px; background: var(--karte); color: var(--text); text-align: right; }
+.feld.check { flex-direction: row; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; }
+.feld.check input { width: 22px; height: 22px; min-height: 0; margin: 0; flex-shrink: 0; }
+.feld.check span { font-size: 15px; color: var(--text); }
+.dlg-info { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); font-size: 14px; font-weight: 600; }
+.dlg-info:empty { display: none; }
+.dlg textarea { width: 100%; padding: 10px; font: 14px/1.5 ui-monospace, monospace; border: 1px solid var(--linie); border-radius: 10px; background: var(--bg); color: var(--text); margin: 8px 0; }
+.auswahl .suche { width: 100%; min-height: 44px; padding: 0 12px; font-size: 16px; border: 1px solid var(--linie); border-radius: 10px; background: var(--bg); color: var(--text); }
+.auswahl-liste { max-height: min(48dvh, 420px); overflow-y: auto; margin: 8px -16px 10px; padding: 0 16px; border-bottom: 1px solid var(--linie); }
+.auswahl-gruppe { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--leise); margin: 12px 0 4px; }
+.auswahl-zeile { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid var(--linie); }
+.auswahl-zeile.gewaehlt .auswahl-name b { color: var(--akzent); }
+.auswahl-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.auswahl-name b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.auswahl-name small { color: var(--leise); }
+.stepper { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--linie); background: var(--karte); font-size: 20px; cursor: pointer; flex-shrink: 0; }
+.auswahl-zeile .menge { width: 56px; min-height: 40px; text-align: center; font-size: 16px; border: 1px solid var(--linie); border-radius: 10px; background: var(--bg); color: var(--text); }
+
 /* ---------- Fotos ---------- */
 .knopfreihe.oben { margin: 0 0 6px; }
 .knopfreihe.oben .btn { flex: 1; }
@@ -230,6 +265,9 @@ body.vollbild { overflow: hidden; overscroll-behavior: none; }
 .bericht th, .bericht td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #ddd; vertical-align: top; }
 .bericht .r { text-align: right; white-space: nowrap; }
 .bericht tr.summe td { font-weight: 700; border-top: 2px solid #111; background: none; }
+.bericht td small { color: #555; }
+.bericht .endsumme { width: auto; min-width: 320px; margin: 20px 0 0 auto; font-size: 15px; }
+.bericht .endsumme tr.gross td { font-size: 17px; border-top: 3px double #111; }
 .bericht-plan { border: 1px solid #ddd; border-radius: 8px; aspect-ratio: 4/3; color: #111; break-inside: avoid; }
 .bericht-plan svg { --karte: #fff; }
 .bericht-fotos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }

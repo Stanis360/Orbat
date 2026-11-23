@@ -2,29 +2,15 @@ import * as store from "./store.js";
 import * as sync from "./sync.js";
 import { editor, vorschauSvg } from "./grundriss.js";
 import * as fotos from "./fotos.js";
+import * as preise from "./preise.js";
+import { $, esc, zahl, fmt, euro, heute, datum, nachDatum, formular, herunterladen, dialog } from "./ui.js";
 
-const $ = (s, w = document) => w.querySelector(s);
 const inhalt = $("#inhalt");
 const titel = $("#titel");
 const zurueck = $("#zurueck");
 
-// ---------- Hilfen ----------
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const zahl = (v) => { const n = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) ? n : null; };
-const fmt = (n, st = 2) => (n ?? 0).toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: st });
-const euro = (n) => (n ?? 0).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
-const heute = () => new Date().toLocaleDateString("sv-SE");
-const datum = (d) => (d ? new Date(d + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }) : "");
-const nachDatum = (a, b) => (b.datum || "").localeCompare(a.datum || "") || b.updatedAt - a.updatedAt;
-
 const STATUS = { geplant: "Geplant", laufend: "Läuft", pausiert: "Pausiert", fertig: "Fertig" };
-const EINHEITEN = ["Stk", "m", "m²", "m³", "kg", "t", "l", "Sack", "Eimer", "Rolle", "Paket", "Palette", "pauschal"];
-
-function summen(bId) {
-  const std = store.von("stunden", bId).reduce((s, r) => s + (zahl(r.stunden) || 0), 0);
-  const mat = store.von("material", bId).reduce((s, r) => s + (zahl(r.menge) || 0) * (zahl(r.preis) || 0), 0);
-  return { std, mat };
-}
+const { summen } = preise;
 
 function massWerte(m) {
   const l = zahl(m.laenge), b = zahl(m.breite), h = zahl(m.hoehe), n = zahl(m.anzahl) || 1;
@@ -40,61 +26,6 @@ function massText(m) {
   const n = zahl(m.anzahl) || 1;
   const d = [m.laenge, m.breite, m.hoehe].map(zahl).filter((x) => x != null).map((x) => fmt(x, 3)).join(" × ");
   return (n > 1 ? `${fmt(n)} × ` : "") + (d ? d + " m" : "");
-}
-
-// ---------- Formular-Dialog ----------
-const dialog = $("#dialog");
-function formular({ titel: t, felder, werte = {}, loeschbar = false, beiEingabe }) {
-  return new Promise((fertig) => {
-    const listen = [];
-    const html = felder.map((f) => {
-      const v = werte[f.n] ?? f.standard ?? "";
-      const pflicht = f.pflicht ? "required" : "";
-      let eingabe;
-      if (f.typ === "textarea") eingabe = `<textarea name="${f.n}" rows="3">${esc(v)}</textarea>`;
-      else if (f.typ === "select") eingabe = `<select name="${f.n}">${Object.entries(f.opt).map(([k, l]) => `<option value="${k}" ${k === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
-      else {
-        let liste = "";
-        if (f.liste?.length) {
-          const id = "dl-" + f.n;
-          listen.push(`<datalist id="${id}">${f.liste.map((x) => `<option value="${esc(x)}">`).join("")}</datalist>`);
-          liste = `list="${id}"`;
-        }
-        const typ = f.typ === "zahl" ? `type="text" inputmode="decimal"` : `type="${f.typ || "text"}"`;
-        eingabe = `<input name="${f.n}" ${typ} value="${esc(v)}" ${pflicht} ${liste} placeholder="${esc(f.platzhalter || "")}" autocomplete="off">`;
-      }
-      return `<label class="feld ${f.halb ? "halb" : ""}"><span>${esc(f.l)}${f.pflicht ? " *" : ""}</span>${eingabe}</label>`;
-    }).join("");
-    dialog.innerHTML = `
-      <form method="dialog" class="dlg">
-        <h3>${esc(t)}</h3>
-        <div class="felder">${html}</div>
-        ${listen.join("")}
-        <div class="dlg-knoepfe">
-          ${loeschbar ? `<button type="button" class="btn gefahr" data-loeschen>Löschen</button>` : ""}
-          <span class="platz"></span>
-          <button type="button" class="btn" data-abbrechen>Abbrechen</button>
-          <button type="submit" class="btn primaer">Speichern</button>
-        </div>
-      </form>`;
-    const form = $("form", dialog);
-    let erledigt = false;
-    const schliessen = (erg) => { if (erledigt) return; erledigt = true; dialog.close(); fertig(erg); };
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const daten = {};
-      for (const f of felder) daten[f.n] = (form.elements[f.n].value || "").trim();
-      schliessen(daten);
-    });
-    if (beiEingabe) form.addEventListener("input", (e) => beiEingabe(form, e.target.name));
-    $("[data-abbrechen]", form).onclick = () => schliessen(null);
-    const weg = $("[data-loeschen]", form);
-    if (weg) weg.onclick = () => { if (confirm("Wirklich löschen?")) schliessen({ __loeschen: true }); };
-    dialog.onclose = () => schliessen(null);
-    dialog.showModal();
-    const erstes = form.querySelector("input, textarea, select");
-    if (erstes && !matchMedia("(pointer: coarse)").matches) erstes.focus();
-  });
 }
 
 // ---------- Sync-Anzeige ----------
@@ -141,7 +72,12 @@ function ansichtListe() {
     .filter((b) => !suche || [b.name, b.kunde, b.adresse].join(" ").toLowerCase().includes(suche))
     .sort((a, b) => (a.status === "laufend" ? 0 : 1) - (b.status === "laufend" ? 0 : 1) || b.updatedAt - a.updatedAt);
 
+  const bestellen = store.liste("material", (m) => m.status === "zu_bestellen" && store.get(m.baustelleId)).length;
   inhalt.innerHTML = `
+    <div class="knopfreihe oben">
+      <a class="btn" href="#/preise">📋 Preisliste</a>
+      <a class="btn ${bestellen ? "hinweis-btn" : ""}" href="#/bestellen">🛒 Bestellungen${bestellen ? ` <span class="zaehler">${bestellen}</span>` : ""}</a>
+    </div>
     <div class="suchzeile">
       <input id="suche" type="search" placeholder="Suchen: Name, Kunde, Ort …" value="${esc(sessionStorage.getItem("suche") || "")}">
     </div>
@@ -154,7 +90,7 @@ function ansichtListe() {
         return `<a class="karte baustelle" href="#/b/${b.id}">
           <div class="zeile"><b>${esc(b.name)}</b><span class="status ${b.status || "geplant"}">${STATUS[b.status] || "Geplant"}</span></div>
           ${b.kunde || b.adresse ? `<div class="leise">${esc([b.kunde, b.adresse].filter(Boolean).join(" · "))}</div>` : ""}
-          <div class="kennzahlen"><span>⏱ ${fmt(s.std)} h</span>${s.mat ? `<span>📦 ${euro(s.mat)}</span>` : ""}</div>
+          <div class="kennzahlen"><span>⏱ ${fmt(s.std)} h</span>${s.stdVk + s.matVk ? `<span>💶 ${euro(s.stdVk + s.matVk)}</span>` : ""}${s.zuBestellen ? `<span class="warn">🛒 ${s.zuBestellen} zu bestellen</span>` : ""}</div>
         </a>`;
       }).join("") || `<div class="leer">${suche ? "Nichts gefunden." : "Noch keine Baustellen.<br>Tippe auf <b>＋</b>, um die erste anzulegen."}</div>`}
     </div>
@@ -200,20 +136,20 @@ function ansichtBaustelle(id, tab = "info") {
     <div id="tab"></div>`;
   const ziel = $("#tab");
   inhalt.querySelector(".unter-tabs a.aktiv")?.scrollIntoView({ block: "nearest", inline: "center" });
-  ({ info: tabInfo, masse: tabMasse, stunden: tabStunden, material: tabMaterial, plaene: tabPlaene, fotos: tabFotos }[tab] || tabInfo)(b, ziel);
+  ({ info: tabInfo, masse: tabMasse, stunden: tabStunden, material: preise.tabMaterial, plaene: tabPlaene, fotos: tabFotos }[tab] || tabInfo)(b, ziel);
 }
 
 function tabInfo(b, ziel) {
   const s = summen(b.id);
-  const satz = zahl(store.getMeta("stundensatz", ""));
   const plaene = store.von("plan", b.id).length;
   const fotoZahl = store.von("foto", b.id).length;
   const masse = store.von("mass", b.id).length;
   const karte = (k, v, link) => `<a class="kachel" href="${link}"><small>${k}</small><b>${v}</b></a>`;
   ziel.innerHTML = `
     <div class="kacheln">
-      ${karte("Stunden", fmt(s.std) + " h" + (satz ? `<br><small>≈ ${euro(s.std * satz)}</small>` : ""), `#/b/${b.id}/stunden`)}
-      ${karte("Material", euro(s.mat), `#/b/${b.id}/material`)}
+      ${karte("Gesamt (netto)", euro(s.stdVk + s.matVk), `#/bericht/${b.id}`)}
+      ${karte("Stunden", fmt(s.std) + " h" + (s.stdVk ? `<br><small>${euro(s.stdVk)}</small>` : ""), `#/b/${b.id}/stunden`)}
+      ${karte("Material", euro(s.matVk) + (s.zuBestellen || s.bestellt ? `<br><small>${[s.zuBestellen && s.zuBestellen + " zu bestellen", s.bestellt && s.bestellt + " bestellt"].filter(Boolean).join(", ")}</small>` : ""), `#/b/${b.id}/material`)}
       ${karte("Maße", masse, `#/b/${b.id}/masse`)}
       ${karte("Grundrisse", plaene, `#/b/${b.id}/plaene`)}
       ${karte("Fotos", fotoZahl, `#/b/${b.id}/fotos`)}
@@ -285,15 +221,16 @@ function tabStunden(b, ziel) {
   const proPerson = new Map();
   for (const s of liste) proPerson.set(s.person || "–", (proPerson.get(s.person || "–") || 0) + (zahl(s.stunden) || 0));
   const gesamt = [...proPerson.values()].reduce((a, c) => a + c, 0);
+  const betrag = liste.reduce((a, x) => a + (preise.stdVk(x) || 0), 0);
   ziel.innerHTML = `
     <div class="karte summe">
-      <div class="zeile"><b>Gesamt</b><b>${fmt(gesamt)} h</b></div>
+      <div class="zeile"><b>Gesamt</b><b>${fmt(gesamt)} h${betrag ? ` · ${euro(betrag)}` : ""}</b></div>
       ${proPerson.size > 1 ? [...proPerson].map(([p, h]) => `<div class="zeile leise"><span>${esc(p)}</span><span>${fmt(h)} h</span></div>`).join("") : ""}
     </div>
     <div class="liste">${liste.map((s) => `
       <button class="karte eintrag" data-id="${s.id}">
         <div class="zeile"><b>${datum(s.datum)}</b><span class="wert">${fmt(zahl(s.stunden))} h</span></div>
-        <div class="leise">${esc([s.person, s.von && s.bis ? `${s.von}–${s.bis}` : "", s.taetigkeit].filter(Boolean).join(" · "))}</div>
+        <div class="zeile leise"><span>${esc([s.person, s.satz, s.von && s.bis ? `${s.von}–${s.bis}` : "", s.taetigkeit].filter(Boolean).join(" · "))}</span><span>${preise.stdVk(s) != null ? euro(preise.stdVk(s)) : ""}</span></div>
       </button>`).join("") || `<div class="leer">Noch keine Stunden eingetragen.</div>`}
     </div>
     <button class="fab" id="neu" aria-label="Stunden eintragen">＋</button>`;
@@ -305,10 +242,21 @@ function minuten(t) { const m = /^(\d{1,2}):(\d{2})/.exec(t || ""); return m ? +
 
 async function stundenBearbeiten(b, s) {
   const personen = [...new Set([store.getMeta("name", ""), ...store.liste("stunden").map((x) => x.person)].filter(Boolean))];
+  const saetze = preise.saetze();
+  const satzOpt = [...saetze.map((x) => [x.id, `${x.name} – ${euro(zahl(x.preis))}/h`]), ["", "– ohne Stundensatz –"]];
+  // Gelöschter Satz bei altem Eintrag: trotzdem anzeigen
+  if (s?.satzId && !store.get(s.satzId)) satzOpt.unshift([s.satzId, `${s.satz} – ${euro(zahl(s.stundenpreis))}/h`]);
+  const preisVon = (form) => (s && form.satzId.value === (s.satzId || "") ? zahl(s.stundenpreis) : zahl(store.get(form.satzId.value)?.preis));
+  const info = (form) => {
+    const h = zahl(form.stunden.value), p = preisVon(form);
+    form.info.textContent = h != null && p != null ? `${fmt(h)} h × ${euro(p)} = ${euro(h * p)}` : saetze.length ? "" : "Tipp: Stundensätze in der Preisliste anlegen";
+  };
   const erg = await formular({
     titel: s ? "Stunden bearbeiten" : "Stunden eintragen",
-    werte: s || { datum: heute(), person: store.getMeta("name", "") },
+    werte: s ? { ...s, satzId: s.satzId || "" } : { datum: heute(), person: store.getMeta("name", ""), satzId: preise.satzVorschlag(b.id) },
     loeschbar: !!s,
+    fuss: true,
+    beiStart: info,
     felder: [
       { n: "datum", l: "Datum", typ: "date", pflicht: true, halb: true },
       { n: "person", l: "Wer", liste: personen, halb: true },
@@ -316,71 +264,35 @@ async function stundenBearbeiten(b, s) {
       { n: "bis", l: "Bis", typ: "time", halb: true },
       { n: "pause", l: "Pause (Min.)", typ: "zahl", halb: true },
       { n: "stunden", l: "Stunden", typ: "zahl", pflicht: true, halb: true, platzhalter: "z.B. 7,5" },
+      { n: "satzId", l: "Stundensatz", typ: "select", opt: satzOpt },
       { n: "taetigkeit", l: "Tätigkeit", liste: [...new Set(store.liste("stunden").map((x) => x.taetigkeit).filter(Boolean))].slice(0, 30) },
     ],
     beiEingabe(form, feld) {
+      info(form);
       if (!["von", "bis", "pause"].includes(feld)) return;
       const v = minuten(form.von.value), bis = minuten(form.bis.value);
       if (v == null || bis == null) return;
       let d = bis - v - (zahl(form.pause.value) || 0);
       if (d < 0) d += 24 * 60;
       form.stunden.value = fmt(Math.round((d / 60) * 100) / 100);
+      info(form);
     },
   });
   if (!erg) return;
   if (erg.__loeschen) await store.loeschen(s.id);
-  else await store.speichern({ ...(s || { typ: "stunden", baustelleId: b.id }), ...erg, stunden: String(zahl(erg.stunden) ?? "") });
+  else {
+    // Preis zum Zeitpunkt des Eintrags merken (spätere Preisänderungen ändern alte Einträge nicht)
+    const satz = store.get(erg.satzId);
+    const gleich = s && (s.satzId || "") === erg.satzId;
+    await store.speichern({
+      ...(s || { typ: "stunden", baustelleId: b.id }), ...erg, stunden: String(zahl(erg.stunden) ?? ""),
+      satz: gleich ? s.satz || "" : satz?.name || "",
+      stundenpreis: gleich ? s.stundenpreis || "" : satz?.preis || "",
+    });
+  }
   zeigen();
 }
 
-// ----- Material -----
-function tabMaterial(b, ziel) {
-  const liste = store.von("material", b.id).sort(nachDatum);
-  const gesamt = liste.reduce((a, m) => a + (zahl(m.menge) || 0) * (zahl(m.preis) || 0), 0);
-  ziel.innerHTML = `
-    <div class="karte summe"><div class="zeile"><b>Gesamt</b><b>${euro(gesamt)}</b></div>
-      <div class="leise klein">${liste.length} Position(en)${liste.some((m) => !zahl(m.preis)) ? " · ohne Preis zählen nicht zur Summe" : ""}</div></div>
-    <div class="liste">${liste.map((m) => {
-      const summe = (zahl(m.menge) || 0) * (zahl(m.preis) || 0);
-      return `<button class="karte eintrag" data-id="${m.id}">
-        <div class="zeile"><b>${esc(m.bezeichnung)}</b><span class="wert">${fmt(zahl(m.menge))} ${esc(m.einheit || "")}</span></div>
-        <div class="zeile leise"><span>${datum(m.datum)}${m.notiz ? " · " + esc(m.notiz) : ""}</span><span>${summe ? euro(summe) : ""}</span></div>
-      </button>`;
-    }).join("") || `<div class="leer">Noch kein Zusatzmaterial eingetragen.</div>`}
-    </div>
-    <button class="fab" id="neu" aria-label="Material eintragen">＋</button>`;
-  ziel.querySelectorAll("[data-id]").forEach((el) => (el.onclick = () => materialBearbeiten(b, store.get(el.dataset.id))));
-  $("#neu").onclick = () => materialBearbeiten(b);
-}
-
-async function materialBearbeiten(b, m) {
-  const frueher = store.liste("material");
-  const erg = await formular({
-    titel: m ? "Material bearbeiten" : "Material eintragen",
-    werte: m || { datum: heute(), menge: "1" },
-    loeschbar: !!m,
-    felder: [
-      { n: "bezeichnung", l: "Material", pflicht: true, liste: [...new Set(frueher.map((x) => x.bezeichnung).filter(Boolean))], platzhalter: "z.B. Fliesenkleber" },
-      { n: "menge", l: "Menge", typ: "zahl", halb: true },
-      { n: "einheit", l: "Einheit", halb: true, liste: EINHEITEN, standard: "Stk" },
-      { n: "preis", l: "Preis je Einheit (€)", typ: "zahl", halb: true },
-      { n: "datum", l: "Datum", typ: "date", halb: true },
-      { n: "notiz", l: "Notiz / Lieferant" },
-    ],
-    beiEingabe(form, feld) {
-      // Einheit und Preis vom letzten gleichen Material übernehmen
-      if (feld !== "bezeichnung") return;
-      const vorher = frueher.filter((x) => x.bezeichnung === form.bezeichnung.value).sort((a, c) => c.updatedAt - a.updatedAt)[0];
-      if (vorher) { form.einheit.value = vorher.einheit || form.einheit.value; if (!form.preis.value) form.preis.value = vorher.preis || ""; }
-    },
-  });
-  if (!erg) return;
-  if (erg.__loeschen) await store.loeschen(m.id);
-  else await store.speichern({ ...(m || { typ: "material", baustelleId: b.id }), ...erg });
-  zeigen();
-}
-
-// ----- Grundrisse -----
 // ----- Fotos -----
 const nachAufnahme = (a, c) => (c.datum || "").localeCompare(a.datum || "") || (c.zeit || "").localeCompare(a.zeit || "") || c.updatedAt - a.updatedAt;
 
@@ -474,23 +386,34 @@ function ansichtBericht(id) {
   const plaene = store.von("plan", id);
   const fotoListe = store.von("foto", id).sort((a, c) => (a.datum || "").localeCompare(c.datum || "") || (a.zeit || "").localeCompare(c.zeit || ""));
   const mitFotos = store.getMeta("berichtFotos", true);
+  const mitPreisen = store.getMeta("berichtPreise", true);
   const s = summen(id);
+  const netto = s.stdVk + s.matVk, satzMwst = preise.mwst();
+  const betrag = (v) => (v == null ? "" : euro(v));
   inhalt.innerHTML = `
     <div class="knopfreihe nicht-drucken"><button class="btn primaer" onclick="print()">🖨 Drucken / als PDF speichern</button>
-      ${fotoListe.length ? `<label class="btn"><input type="checkbox" id="mit-fotos" ${mitFotos ? "checked" : ""}> Fotos (${fotoListe.length}) mit drucken</label>` : ""}</div>
+      <label class="btn"><input type="checkbox" id="mit-preisen" ${mitPreisen ? "checked" : ""}> Preise</label>
+      ${fotoListe.length ? `<label class="btn"><input type="checkbox" id="mit-fotos" ${mitFotos ? "checked" : ""}> Fotos (${fotoListe.length})</label>` : ""}</div>
     <article class="bericht">
       <h1>${esc(b.name)}</h1>
       <p>${[b.kunde, b.adresse, b.telefon].some(Boolean) ? esc([b.kunde, b.adresse, b.telefon].filter(Boolean).join(" · ")) + "<br>" : ""}
       Status: ${STATUS[b.status] || ""}${b.beginn ? " · Beginn " + datum(b.beginn) : ""} · Stand ${new Date().toLocaleDateString("de-DE")}</p>
       ${b.notiz ? `<p class="notiz">${esc(b.notiz)}</p>` : ""}
-      <h3>Stunden (${fmt(s.std)} h)</h3>
-      ${std.length ? `<table><tr><th>Datum</th><th>Wer</th><th>Zeit</th><th>Tätigkeit</th><th class="r">Std.</th></tr>
-        ${std.map((r) => `<tr><td>${datum(r.datum)}</td><td>${esc(r.person)}</td><td>${r.von && r.bis ? `${r.von}–${r.bis}` : ""}</td><td>${esc(r.taetigkeit)}</td><td class="r">${fmt(zahl(r.stunden))}</td></tr>`).join("")}
-        <tr class="summe"><td colspan="4">Summe</td><td class="r">${fmt(s.std)}</td></tr></table>` : "<p>–</p>"}
-      <h3>Material (${euro(s.mat)})</h3>
-      ${mat.length ? `<table><tr><th>Datum</th><th>Material</th><th class="r">Menge</th><th class="r">Preis</th><th class="r">Summe</th></tr>
-        ${mat.map((r) => `<tr><td>${datum(r.datum)}</td><td>${esc(r.bezeichnung)}${r.notiz ? ` <small>(${esc(r.notiz)})</small>` : ""}</td><td class="r">${fmt(zahl(r.menge))} ${esc(r.einheit)}</td><td class="r">${zahl(r.preis) ? euro(zahl(r.preis)) : ""}</td><td class="r">${zahl(r.preis) ? euro(zahl(r.preis) * (zahl(r.menge) || 0)) : ""}</td></tr>`).join("")}
-        <tr class="summe"><td colspan="4">Summe</td><td class="r">${euro(s.mat)}</td></tr></table>` : "<p>–</p>"}
+      <h3>Arbeitszeit (${fmt(s.std)} h)</h3>
+      ${std.length ? `<table><tr><th>Datum</th><th>Wer</th><th>Tätigkeit</th><th class="r">Std.</th>${mitPreisen ? `<th class="r">€/h</th><th class="r">Betrag</th>` : ""}</tr>
+        ${std.map((r) => `<tr><td>${datum(r.datum)}${r.von && r.bis ? `<br><small>${r.von}–${r.bis}</small>` : ""}</td><td>${esc(r.person)}${r.satz ? `<br><small>${esc(r.satz)}</small>` : ""}</td><td>${esc(r.taetigkeit)}</td><td class="r">${fmt(zahl(r.stunden))}</td>${mitPreisen ? `<td class="r">${betrag(zahl(r.stundenpreis))}</td><td class="r">${betrag(preise.stdVk(r))}</td>` : ""}</tr>`).join("")}
+        <tr class="summe"><td colspan="3">Summe</td><td class="r">${fmt(s.std)}</td>${mitPreisen ? `<td></td><td class="r">${euro(s.stdVk)}</td>` : ""}</tr></table>` : "<p>–</p>"}
+      <h3>Material</h3>
+      ${mat.length ? `<table><tr><th>Datum</th><th>Material</th><th class="r">Menge</th>${mitPreisen ? `<th class="r">€/Einh.</th><th class="r">Betrag</th>` : ""}</tr>
+        ${mat.map((r) => `<tr><td>${datum(r.datum)}</td><td>${esc(r.bezeichnung)}${r.status && r.status !== "vorhanden" ? ` <small>(${preise.MSTATUS[r.status].toLowerCase()})</small>` : ""}</td><td class="r">${fmt(zahl(r.menge))} ${esc(r.einheit)}</td>${mitPreisen ? `<td class="r">${betrag(zahl(r.vk))}</td><td class="r">${betrag(preise.matVk(r))}</td>` : ""}</tr>`).join("")}
+        ${mitPreisen ? `<tr class="summe"><td colspan="4">Summe</td><td class="r">${euro(s.matVk)}</td></tr>` : ""}</table>` : "<p>–</p>"}
+      ${mitPreisen && netto ? `<table class="endsumme">
+        <tr><td>Arbeitszeit</td><td class="r">${euro(s.stdVk)}</td></tr>
+        <tr><td>Material</td><td class="r">${euro(s.matVk)}</td></tr>
+        <tr class="summe"><td>Summe netto</td><td class="r">${euro(netto)}</td></tr>
+        <tr><td>zzgl. ${fmt(satzMwst)} % MwSt.</td><td class="r">${euro((netto * satzMwst) / 100)}</td></tr>
+        <tr class="summe gross"><td>Gesamt brutto</td><td class="r">${euro(netto * (1 + satzMwst / 100))}</td></tr>
+      </table>` : ""}
       <h3>Maße</h3>
       ${masse.length ? `<table><tr><th>Bereich</th><th>Was</th><th>Maße</th><th class="r">Ergebnis</th></tr>
         ${masse.map((m) => `<tr><td>${esc(m.bereich)}</td><td>${esc(m.bezeichnung)}${m.notiz ? ` <small>(${esc(m.notiz)})</small>` : ""}</td><td>${massText(m)}</td><td class="r">${massWerte(m)}</td></tr>`).join("")}</table>` : "<p>–</p>"}
@@ -498,6 +421,7 @@ function ansichtBericht(id) {
       ${fotoListe.length && mitFotos ? `<h3>Fotos</h3><div class="bericht-fotos">${fotoListe.map((f) => `
         <figure><img data-gross="${f.id}" src="${f.thumb}" alt=""><figcaption>${datum(f.datum)}${f.zeit ? " " + f.zeit : ""}${f.notiz ? " – " + esc(f.notiz) : ""}</figcaption></figure>`).join("")}</div>` : ""}
     </article>`;
+  $("#mit-preisen").addEventListener("change", async (e) => { await store.setMeta("berichtPreise", e.target.checked); zeigen(); });
   $("#mit-fotos")?.addEventListener("change", async (e) => { await store.setMeta("berichtFotos", e.target.checked); zeigen(); });
   inhalt.querySelectorAll("[data-gross]").forEach(async (img) => { const u = await fotos.grossUrl(img.dataset.gross); if (u) img.src = u; });
   inhalt.querySelectorAll("[data-plan]").forEach((el) => {
@@ -526,7 +450,8 @@ function ansichtEinstellungen() {
     <h2>Allgemein</h2>
     <form class="karte form" id="allg-form">
       <label class="feld"><span>Mein Name (Vorschlag bei Stunden)</span><input name="name" value="${esc(store.getMeta("name", ""))}"></label>
-      <label class="feld"><span>Stundensatz in € (optional, für Kostenschätzung)</span><input name="stundensatz" inputmode="decimal" value="${esc(store.getMeta("stundensatz", ""))}"></label>
+      <label class="feld"><span>MwSt. in % (für den Bericht)</span><input name="mwst" inputmode="decimal" value="${esc(store.getMeta("mwst", "20"))}"></label>
+      <p class="leise klein">Stundensätze und Materialpreise pflegst du in der <a class="link" href="#/preise">Preisliste</a>.</p>
       <div class="knopfreihe"><button class="btn" type="submit">Speichern</button></div>
     </form>
 
@@ -553,7 +478,7 @@ function ansichtEinstellungen() {
   $("#allg-form").onsubmit = async (e) => {
     e.preventDefault();
     await store.setMeta("name", e.target.name.value.trim());
-    await store.setMeta("stundensatz", e.target.stundensatz.value.trim());
+    await store.setMeta("mwst", e.target.mwst.value.trim() || "20");
     e.target.querySelector("button").textContent = "✓ Gespeichert";
   };
   $("#export").onclick = () => herunterladen(`baustellen-sicherung-${heute()}.json`, JSON.stringify({ app: "baustellen", version: 1, records: store.alles() }), "application/json");
@@ -572,26 +497,17 @@ function ansichtEinstellungen() {
   $("#csv").onclick = csvExport;
 }
 
-function herunterladen(name, inhalt, typ) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([inhalt], { type: typ }));
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-}
-
 function csvExport() {
   const zelle = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const z = (n) => (n == null ? "" : String(n).replace(".", ","));
+  const z = (n) => (n == null ? "" : String(Math.round(n * 100) / 100).replace(".", ","));
   const name = (id) => store.get(id)?.name || "";
-  const zeilen = [["Art", "Baustelle", "Datum", "Wer / Material", "Tätigkeit / Notiz", "Von", "Bis", "Stunden", "Menge", "Einheit", "Preis", "Summe"]];
-  for (const s of store.liste("stunden").sort((a, b) => (a.datum || "").localeCompare(b.datum || "")))
-    zeilen.push(["Stunden", name(s.baustelleId), s.datum, s.person, s.taetigkeit, s.von, s.bis, z(zahl(s.stunden)), "", "", "", ""]);
-  for (const m of store.liste("material").sort((a, b) => (a.datum || "").localeCompare(b.datum || ""))) {
-    const sum = zahl(m.preis) != null ? (zahl(m.menge) || 0) * zahl(m.preis) : null;
-    zeilen.push(["Material", name(m.baustelleId), m.datum, m.bezeichnung, m.notiz, "", "", "", z(zahl(m.menge)), m.einheit, z(zahl(m.preis)), z(sum?.toFixed(2))]);
-  }
-  herunterladen(`baustellen-${heute()}.csv`, "﻿" + zeilen.map((r) => r.map(zelle).join(";")).join("\r\n"), "text/csv");
+  const zeilen = [["Art", "Baustelle", "Datum", "Wer / Material", "Tätigkeit / Notiz", "Stundensatz / Status", "Von", "Bis", "Stunden", "Menge", "Einheit", "EK je Einheit", "Kundenpreis je Einheit", "EK gesamt", "Kunde gesamt"]];
+  const nachD = (a, b) => (a.datum || "").localeCompare(b.datum || "");
+  for (const s of store.liste("stunden").sort(nachD))
+    zeilen.push(["Stunden", name(s.baustelleId), s.datum, s.person, s.taetigkeit, s.satz, s.von, s.bis, z(zahl(s.stunden)), "", "", "", z(zahl(s.stundenpreis)), "", z(preise.stdVk(s))]);
+  for (const m of store.liste("material").sort(nachD))
+    zeilen.push(["Material", name(m.baustelleId), m.datum, m.bezeichnung, m.notiz, preise.MSTATUS[m.status] || "Vorhanden", "", "", "", z(zahl(m.menge)), m.einheit, z(zahl(m.preis)), z(zahl(m.vk)), z(preise.matEk(m)), z(preise.matVk(m))]);
+  herunterladen(`baustellen-${heute()}.csv`, "\ufeff" + zeilen.map((r) => r.map(zelle).join(";")).join("\r\n"), "text/csv");
 }
 
 // ---------- Routing ----------
@@ -605,6 +521,8 @@ function zeigen() {
   else if (teile[0] === "plan" && teile[1]) ansichtPlan(teile[1]);
   else if (teile[0] === "bericht" && teile[1]) ansichtBericht(teile[1]);
   else if (teile[0] === "einstellungen") ansichtEinstellungen();
+  else if (teile[0] === "preise") preise.ansichtPreisliste(kopf, inhalt, teile[1] || "material");
+  else if (teile[0] === "bestellen") preise.ansichtBestellen(kopf, inhalt);
   else ansichtListe();
 }
 
@@ -633,6 +551,7 @@ dialog.addEventListener("close", () => { if (neuZeichnenAusstehend && !aktueller
     inhalt.innerHTML = `<div class="leer">Der Gerätespeicher ist nicht verfügbar (privater Modus?).<br><small>${esc(e.message)}</small></div>`;
     return;
   }
+  preise.init({ zeigen });
   zeigen();
   sync.starten();
   if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(() => {});

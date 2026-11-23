@@ -7,10 +7,20 @@ Sobald ein Gerät den **kleinen Server auf deinem PC zu Hause** erreicht, gleich
 - **Baustellen** mit Kunde, Telefon (antippen ruft an), Adresse (öffnet die Karte), Status, Zeitraum und Notizen
 - **Maße** nach Raum/Bereich (L × B × H × Anzahl). Fläche (m²) und Volumen (m³) rechnet die App selbst aus.
 - **Grundriss zeichnen**: Wände, Fenster, Türen, Hilfslinien und Raumnamen. Die Längen erscheinen automatisch, und eine Wand lässt sich auch exakt per Zahl auf Länge bringen. Alles rastet im 10-cm-Raster und an vorhandenen Ecken ein. Zoomen geht mit zwei Fingern oder dem Mausrad, außerdem gibt es Rückgängig und den Export als Bild (PNG).
-- **Stunden**: Datum, wer, von–bis, Pause und Tätigkeit. Aus von–bis und Pause werden die Stunden automatisch berechnet. Es gibt eine Summe pro Person.
-- **Zusatzmaterial**: Menge, Einheit, Preis und Summe. Bekanntes Material wird vorgeschlagen, inklusive des letzten Preises.
+- **Preisliste** (einmal anlegen, dann nur noch auswählen):
+  - **Materialien** mit Einheit, Einkaufspreis, Kundenpreis, Kategorie, Lieferant und Artikelnummer. Fehlt der Kundenpreis, rechnet die App ihn automatisch aus Einkauf + Aufschlag aus (Standard 20 %, einstellbar).
+  - **Ganze Liste einfügen**: Zeilen in Excel markieren, kopieren und einfügen, fertig. Vorhandene Materialien werden dabei aktualisiert. Die Preisliste lässt sich auch als Excel-Datei (CSV) speichern, bearbeiten und wieder einfügen.
+  - **Stundensätze** (z.B. Facharbeiter 55 €/h, Helfer 38,50 €/h), einer davon als Standard
+- **Stunden**: Datum, wer, von–bis, Pause, Tätigkeit und **Stundensatz zum Auswählen**. Aus von–bis und Pause werden die Stunden berechnet, der Betrag erscheint sofort.
+- **Material** auf der Baustelle:
+  - **„Aus Preisliste wählen“**: mehrere Materialien auf einmal mit ＋/− oder Menge antippen und übernehmen
+  - **„Freie Eingabe“**: Kennt die App das Material schon, füllt sie Einheit und Preise selbst aus. Neues Material landet auf Wunsch gleich in der Preisliste.
+  - **Bestellstatus**: 🔴 Zu bestellen → 🟠 Bestellt → 🟢 Vorhanden. Den Status antippen schaltet weiter.
+  - Summe für den Kunden, Einkauf und Aufschlag
+- **Bestellungen** (Startseite): alles, was auf allen Baustellen noch zu bestellen oder schon bestellt ist. Mit **„Liste senden“** geht die Bestellliste, nach Lieferant sortiert, per WhatsApp oder E-Mail raus.
+- **Preise bleiben fest**: Änderst du später einen Preis in der Preisliste, bleiben bereits eingetragene Stunden und Materialien beim alten Preis.
 - **Fotos** pro Baustelle: direkt mit der Kamera aufnehmen oder mehrere aus der Galerie wählen. Die Fotos sind nach Tag sortiert und bekommen eine Notiz. In der Vollbild-Ansicht blätterst du per Wischen oder mit den Pfeiltasten und kannst ein Foto herunterladen. Die App verkleinert jedes Foto automatisch auf max. 1920 px (ca. 200–400 KB).
-- **Bericht** pro Baustelle zum Drucken oder als PDF (Stunden, Material, Maße, Grundrisse und auf Wunsch Fotos)
+- **Bericht** pro Baustelle zum Drucken oder als PDF: Arbeitszeit und Material mit Kundenpreisen, Summe netto, MwSt. und brutto. Dazu kommen Maße, Grundrisse und auf Wunsch Fotos. Die Preise lassen sich ausblenden, z.B. für einen reinen Leistungsnachweis. Den MwSt.-Satz stellst du unter ⚙ ein (Standard 20 %).
 - **Export** aller Stunden und des Materials als CSV für Excel. Außerdem gibt es eine **Sicherung** als Datei, und der Server legt jeden Tag automatisch eine Sicherung an.
 
 Oben rechts siehst du immer den Sync-Stand:
@@ -118,6 +128,8 @@ app/js/store.js      Lokale Datenhaltung (IndexedDB), Löschmarken
 app/js/sync.js       Abgleich mit dem Server (Änderungen seit letzter Sequenznummer)
 app/js/grundriss.js  Grundriss-Editor (SVG)
 app/js/fotos.js      Fotos verkleinern, Vollbild-Ansicht
+app/js/preise.js     Preisliste, Stundensätze, Material + Bestellstatus, Bestellliste
+app/js/ui.js         Gemeinsame Hilfen (Formular-Dialog, Formatierung)
 app/sw.js            Service Worker (App offline verfügbar, nur über https/localhost)
 daten/               Datenbestand + tägliche Sicherungen (wird angelegt, nicht im Git)
 ```
