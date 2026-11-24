@@ -25,6 +25,7 @@ Sobald ein Gerät den **kleinen Server auf deinem PC zu Hause** erreicht, gleich
   - Firmenkopf, Datum, Nummer, Zielort, Empfänger, Kundennummer
   - Positionen mit Code, Beschreibung, ME, Menge, Einzelpreis, Betrag und USt.
   - Unten Zahlungsart, Bank/IBAN, MwSt.-Aufstellung, Betrag Details und „Zu zahlen gesamt“
+  - **Aufgeteilt in „Material“ und „Arbeit“**, jeweils mit Zwischensumme, darunter die Gesamtsumme. Das lässt sich abschalten. Ob ein Eintrag zu Material oder Arbeit gehört, stellst du in der Preisliste ein („Im Angebot unter“). Beim Einfügen einer Liste zählt alles mit der Kategorie „Arbeit“ (oder z.B. „Verlegen“, „Montage“) zur Arbeit. Stunden sind immer Arbeit.
   - Die Positionen kommen automatisch aus Material/Leistungen und Stunden der Baustelle. Die Stunden lassen sich pro Eintrag (mit Tätigkeit) oder pro Stundensatz zusammengefasst ausweisen.
   - Nummern laufen automatisch weiter, getrennt für Angebote und Rechnungen. Die Nummer wird beim ersten Drucken vergeben und lässt sich ändern.
   - Die Einleitungszeile (z.B. „Liefern und verlegen der Wand- und Bodenfliesen für das Bad“) und die MwSt. stellst du pro Baustelle ein.

@@ -27,6 +27,16 @@ const preisText = (v) => (zahl(v) == null ? "" : zahl(v).toLocaleString("de-DE",
 const vkAusEk = (ek) => (ek == null ? "" : preisText(Math.round(ek * (1 + aufschlag() / 100) * 100) / 100));
 const mstatus = (m) => (MSTATUS[m.status] ? m.status : "vorhanden");
 
+// Material oder Arbeit? (für die Aufteilung im Angebot)
+export const ARTEN = { material: "Material", arbeit: "Arbeit" };
+const ARBEIT_WOERTER = /arbeit|leistung|lohn|montage|verlegen|regie/i;
+export const artikelArt = (a) => (ARTEN[a?.art] ? a.art : ARBEIT_WOERTER.test(a?.kategorie || "") ? "arbeit" : "material");
+export function artVon(m) {
+  if (ARTEN[m.art]) return m.art;
+  const a = m.artikelId ? store.get(m.artikelId) : null;
+  return a ? artikelArt(a) : "material";
+}
+
 export function summen(bId) {
   const st = store.von("stunden", bId), ma = store.von("material", bId);
   const sum = (l, f) => l.reduce((a, x) => a + (f(x) || 0), 0);
@@ -89,7 +99,7 @@ function materialZeile(m, mitBaustelle) {
   const bs = mitBaustelle ? store.get(m.baustelleId) : null;
   const unter = [mitBaustelle ? bs?.name : datum(m.datum), m.notiz].filter(Boolean).map(esc).join(" · ");
   return `<div class="karte eintrag material" data-id="${m.id}" role="button" tabindex="0">
-    <div class="zeile"><b>${esc(m.bezeichnung)}</b><span class="wert">${fmt(menge(m))} ${esc(m.einheit || "")}</span></div>
+    <div class="zeile"><b>${esc(m.bezeichnung)}${artVon(m) === "arbeit" ? ` <span class="art-tag">Arbeit</span>` : ""}</b><span class="wert">${fmt(menge(m))} ${esc(m.einheit || "")}</span></div>
     <div class="zeile leise">
       <span>${unter}</span>
       <span class="rechts">${vk != null ? euro(vk) : ""}<button class="mstatus ${st}" data-status="${m.id}" title="Antippen zum Weiterschalten">${MSTATUS[st]}</button></span>
@@ -124,6 +134,7 @@ export async function materialBearbeiten(b, m) {
     { n: "einheit", l: "Einheit", halb: true, liste: EINHEITEN, standard: "Stk" },
     { n: "preis", l: "Einkauf € / Einheit", typ: "zahl", halb: true },
     { n: "vk", l: "Kundenpreis € / Einheit", typ: "zahl", halb: true },
+    { n: "art", l: "Im Angebot unter", typ: "select", opt: Object.entries(ARTEN), halb: true, standard: "material" },
     { n: "status", l: "Status", typ: "select", opt: Object.entries(MSTATUS), halb: true, standard: "vorhanden" },
     { n: "datum", l: "Datum", typ: "date", halb: true },
     { n: "notiz", l: "Notiz / Lieferant" },
@@ -136,7 +147,7 @@ export async function materialBearbeiten(b, m) {
   };
   const erg = await formular({
     titel: m ? "Material bearbeiten" : "Material eintragen",
-    werte: m ? { ...m, preis: preisText(m.preis), vk: preisText(m.vk), status: mstatus(m) } : { datum: heute(), menge: "1", status: "vorhanden" },
+    werte: m ? { ...m, preis: preisText(m.preis), vk: preisText(m.vk), status: mstatus(m), art: artVon(m) } : { datum: heute(), menge: "1", status: "vorhanden" },
     loeschbar: !!m,
     fuss: true,
     felder,
@@ -149,6 +160,7 @@ export async function materialBearbeiten(b, m) {
           form.einheit.value = a.einheit || form.einheit.value;
           form.preis.value = preisText(a.ek);
           form.vk.value = preisText(a.vk);
+          form.art.value = artikelArt(a);
           vkVonHand = true;
         } else {
           artikelId = "";
@@ -167,7 +179,7 @@ export async function materialBearbeiten(b, m) {
   const vorher = m?.status;
   if (daten.status === "bestellt" && vorher !== "bestellt") daten.bestelltAm = heute();
   if (inListe && !artikelNachName(daten.bezeichnung)) {
-    const a = await store.speichern({ typ: "artikel", name: daten.bezeichnung, einheit: daten.einheit, ek: daten.preis, vk: daten.vk, lieferant: daten.notiz });
+    const a = await store.speichern({ typ: "artikel", name: daten.bezeichnung, einheit: daten.einheit, ek: daten.preis, vk: daten.vk, lieferant: daten.notiz, art: daten.art });
     artikelId = a.id;
   }
   await store.speichern({ ...(m || { typ: "material", baustelleId: b.id }), ...daten, artikelId });
@@ -253,7 +265,7 @@ function auswahlDialog(b) {
       if (!(n > 0)) continue;
       const a = store.get(id);
       await store.speichern({
-        typ: "material", baustelleId: b.id, artikelId: a.id, bezeichnung: a.name, einheit: a.einheit || "Stk",
+        typ: "material", baustelleId: b.id, artikelId: a.id, bezeichnung: a.name, einheit: a.einheit || "Stk", art: artikelArt(a),
         menge: String(n), preis: a.ek || "", vk: a.vk || "", status, datum: d, notiz: a.lieferant || "",
         ...(status === "bestellt" ? { bestelltAm: heute() } : {}),
       });
@@ -330,7 +342,7 @@ function tabArtikel(ziel) {
       const ek = zahl(a.ek), vk = zahl(a.vk);
       const kopfZeile = (a.kategorie || "") !== gruppe ? `<h2>${esc((gruppe = a.kategorie || "") || "Ohne Kategorie")}</h2>` : "";
       return `${kopfZeile}<button class="karte eintrag" data-art="${a.id}">
-        <div class="zeile"><b>${esc(a.name)}</b><span class="wert">${vk != null ? euro(vk) : "–"} <small class="leise">/ ${esc(a.einheit || "Stk")}</small></span></div>
+        <div class="zeile"><b>${esc(a.name)}${artikelArt(a) === "arbeit" ? ` <span class="art-tag">Arbeit</span>` : ""}</b><span class="wert">${vk != null ? euro(vk) : "–"} <small class="leise">/ ${esc(a.einheit || "Stk")}</small></span></div>
         <div class="zeile leise klein"><span>${esc([a.lieferant, a.artnr && "Nr. " + a.artnr].filter(Boolean).join(" · "))}</span><span>${ek != null ? `EK ${euro(ek)}${vk != null && ek ? ` · +${fmt(((vk - ek) / ek) * 100, 0)} %` : ""}` : ""}</span></div>
       </button>`;
     }).join("") || `<div class="leer">${suche ? "Nichts gefunden." : "Noch keine Materialien.<br>Tippe auf <b>＋</b> oder füge eine ganze Liste aus Excel ein."}</div>`}</div>
@@ -365,13 +377,14 @@ async function artikelBearbeiten(a) {
   };
   const erg = await formular({
     titel: a ? "Material bearbeiten" : "Neues Material",
-    werte: a ? { ...a, ek: preisText(a.ek), vk: preisText(a.vk) } : { einheit: "Stk" },
+    werte: a ? { ...a, ek: preisText(a.ek), vk: preisText(a.vk), art: artikelArt(a) } : { einheit: "Stk" },
     loeschbar: !!a,
     fuss: true,
     felder: [
       { n: "name", l: "Name", pflicht: true, platzhalter: "z.B. Fliesenkleber flexibel 25 kg" },
       { n: "einheit", l: "Einheit", halb: true, liste: EINHEITEN },
       { n: "kategorie", l: "Kategorie", halb: true, liste: kategorien, platzhalter: "z.B. Fliesen" },
+      { n: "art", l: "Im Angebot unter", typ: "select", opt: Object.entries(ARTEN), standard: "material" },
       { n: "ek", l: "Einkauf € / Einheit", typ: "zahl", halb: true },
       { n: "vk", l: "Kundenpreis € / Einheit", typ: "zahl", halb: true },
       { n: "lieferant", l: "Lieferant", halb: true, liste: lieferanten },
@@ -438,6 +451,7 @@ function listeEinfuegen() {
       <p class="leise klein">Eine Zeile pro Material. Am einfachsten in <b>Excel</b> die Zeilen markieren, kopieren und hier einfügen.
       Reihenfolge der Spalten: <b>Name; Einheit; Einkaufspreis; Kundenpreis; Kategorie; Lieferant; Artikelnummer</b>.
       Mit Überschriftenzeile (z.B. „Name, Einheit, EK, VK“) dürfen die Spalten auch anders sortiert sein. Nur der Name ist Pflicht.
+      Steht in der Kategorie „Arbeit“ (oder z.B. „Verlegen“, „Montage“), kommt der Eintrag im Angebot unter <b>Arbeit</b>, sonst unter <b>Material</b>.
       Ein <b>„-“ als Kundenpreis</b> heißt: wird nicht verrechnet (z.B. Silikon-Tuben, wenn der Kunde pro lm zahlt) – kommt dann nicht aufs Angebot.</p>
       <textarea name="text" rows="9" placeholder="Fliesenkleber flexibel; Sack; 12,90; 18,50; Fliesen; Baumarkt&#10;Silikon Tube sanitär weiß; Stk; 6,20; -; Material&#10;Silikon verfugen; lm; ; 4,30; Fliesen"></textarea>
       <label class="feld check"><input type="checkbox" name="auto" checked><span>Fehlenden Kundenpreis aus Einkauf + ${esc(store.getMeta("aufschlag", "20"))} % berechnen</span></label>

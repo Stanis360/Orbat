@@ -139,6 +139,7 @@ button.karte { cursor: pointer; }
 .plan-vorschau { width: 100%; height: 100%; display: block; color: var(--text); }
 
 /* ---------- Preisliste, Material, Bestellungen ---------- */
+.art-tag { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; vertical-align: 2px; background: color-mix(in srgb, var(--blau) 16%, transparent); color: var(--blau); }
 .zaehler { background: var(--akzent); color: #fff; border-radius: 99px; padding: 0 7px; font-size: 13px; min-width: 22px; text-align: center; }
 .kennzahlen .warn { color: var(--orange); font-weight: 600; }
 .eintrag.material { cursor: pointer; }
@@ -303,6 +304,9 @@ body.vollbild { overflow: hidden; overscroll-behavior: none; }
 .dok-pos tbody tr:first-child td { padding-top: 10px; }
 .dok-pos .r, .dok-steuer .r { text-align: right; white-space: nowrap; }
 .dok-pos td:nth-child(2) { width: 44%; }
+.dok-pos tr.dok-block td { font-weight: 700; padding-top: 14px; text-transform: uppercase; letter-spacing: .03em; }
+.dok-pos tr.dok-zwischen td { font-weight: 700; border-top: 1px solid #000; padding-bottom: 6px; }
+.dok-pos tr.dok-zwischen td:nth-child(2) { text-align: right; }
 .dok-fuss { margin-top: 80px; break-inside: avoid; }
 .dok-raster.bank { grid-template-columns: .9fr 1.6fr 1.6fr; grid-template-rows: auto auto; border-top: 1.5px solid #000; }
 .dok-raster.bank .zelle:first-child { grid-row: span 2; }

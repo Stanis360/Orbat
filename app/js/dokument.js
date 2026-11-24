@@ -21,19 +21,19 @@ export function positionen(b, { stundenZusammen }) {
   // Reihenfolge wie in der Vorlage: erst Material und Leistungen, dann Arbeitsstunden
   const pos = store.von("material", b.id)
     .sort((x, y) => (x.datum || "").localeCompare(y.datum || "") || x.updatedAt - y.updatedAt)
-    .map((m) => ({ code: (m.artikelId && store.get(m.artikelId)?.artnr) || "", text: m.bezeichnung, me: m.einheit || "", menge: zahl(m.menge) || 0, preis: zahl(m.vk) }));
+    .map((m) => ({ art: preise.artVon(m), code: (m.artikelId && store.get(m.artikelId)?.artnr) || "", text: m.bezeichnung, me: m.einheit || "", menge: zahl(m.menge) || 0, preis: zahl(m.vk) }));
   const stunden = store.von("stunden", b.id).sort((x, y) => (x.datum || "").localeCompare(y.datum || ""));
   if (stundenZusammen) {
     // Nach Stundensatz und Preis zusammenfassen
     const gruppen = new Map();
     for (const s of stunden) {
       const k = `${s.satz || ""}|${zahl(s.stundenpreis) ?? ""}`;
-      if (!gruppen.has(k)) gruppen.set(k, { text: `Arbeitsstunden${s.satz ? " " + s.satz : ""}`, me: "h", menge: 0, preis: zahl(s.stundenpreis) });
+      if (!gruppen.has(k)) gruppen.set(k, { art: "arbeit", text: `Arbeitsstunden${s.satz ? " " + s.satz : ""}`, me: "h", menge: 0, preis: zahl(s.stundenpreis) });
       gruppen.get(k).menge += zahl(s.stunden) || 0;
     }
     pos.push(...gruppen.values());
   } else {
-    for (const s of stunden) pos.push({ text: `Arbeitsstunden${s.taetigkeit ? " " + s.taetigkeit : s.satz ? " " + s.satz : ""}`, me: "h", menge: zahl(s.stunden) || 0, preis: zahl(s.stundenpreis) });
+    for (const s of stunden) pos.push({ art: "arbeit", text: `Arbeitsstunden${s.taetigkeit ? " " + s.taetigkeit : s.satz ? " " + s.satz : ""}`, me: "h", menge: zahl(s.stunden) || 0, preis: zahl(s.stundenpreis) });
   }
   return pos;
 }
@@ -47,6 +47,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const f = firma();
   const satz = preise.mwst(b);
   const zusammen = store.getMeta("stundenZusammen", false);
+  const aufteilen = store.getMeta("aufteilen", true);
   // Positionen ohne Kundenpreis (z.B. Verbrauchsmaterial wie Silikon-Tuben) kommen nicht aufs Dokument
   const allePos = positionen(b, { stundenZusammen: zusammen });
   const pos = allePos.filter((p) => p.preis != null);
@@ -59,6 +60,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const empfaenger = (b.rechnungsadresse || [b.kunde, b.adresse].filter(Boolean).join("\n")).split("\n").map((z) => z.trim()).filter(Boolean);
   const firmaFehlt = !f.name;
 
+  const zeile = (p) => `<tr><td>${esc(p.code || "")}</td><td>${esc(p.text)}</td><td>${esc(p.me)}</td><td class="r">${z2(p.menge)}</td><td class="r">${z2(p.preis)}</td><td></td><td class="r">${z2(p.menge * p.preis)}</td><td class="r">${fmt(satz)}</td></tr>`;
   inhalt.innerHTML = `
     <div class="nicht-drucken dok-steuerung">
       <div class="filter">${Object.entries(ARTEN).map(([k, l]) => `<a class="chip ${k === art ? "aktiv" : ""}" href="#/dok/${id}/${k}">${l}</a>`).join("")}</div>
@@ -71,6 +73,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
           <label class="feld"><span>Einleitung (erste Zeile, z.B. „Liefern und verlegen der Wand- und Bodenfliesen für das Bad“)</span><input name="text" value="${esc(text)}"></label>
           <label class="feld halb"><span>MwSt. %</span><input name="mwst" inputmode="decimal" value="${esc(fmt(satz))}"></label>
           <label class="feld check halb"><input type="checkbox" name="zusammen" ${zusammen ? "checked" : ""}><span>Stunden zusammenfassen</span></label>
+          <label class="feld check"><input type="checkbox" name="aufteilen" ${aufteilen ? "checked" : ""}><span>In Material und Arbeit aufteilen (mit Zwischensummen)</span></label>
         </div>
       </form>
       <div class="knopfreihe"><button class="btn primaer" id="drucken">🖨 Drucken / als PDF speichern</button>
@@ -106,7 +109,14 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
         <thead><tr><th>Code</th><th>Beschreibung</th><th>ME</th><th class="r">Menge</th><th class="r">Einzelpreis</th><th class="r">Rabatt</th><th class="r">Betrag</th><th class="r">USt.</th></tr></thead>
         <tbody>
           ${text ? `<tr><td></td><td>${esc(text)}</td><td></td><td class="r">0,00</td><td class="r">0,00</td><td></td><td class="r">0,00</td><td class="r">${fmt(satz)}</td></tr>` : ""}
-          ${pos.map((p) => `<tr><td>${esc(p.code || "")}</td><td>${esc(p.text)}</td><td>${esc(p.me)}</td><td class="r">${z2(p.menge)}</td><td class="r">${p.preis != null ? z2(p.preis) : "?"}</td><td></td><td class="r">${p.preis != null ? z2(p.menge * p.preis) : "?"}</td><td class="r">${fmt(satz)}</td></tr>`).join("")}
+          ${aufteilen ? Object.entries(preise.ARTEN).map(([k, titel]) => {
+            const teil = pos.filter((p) => p.art === k);
+            if (!teil.length) return "";
+            const summe = teil.reduce((a, p) => a + p.menge * p.preis, 0);
+            return `<tr class="dok-block"><td></td><td colspan="7">${titel}</td></tr>
+              ${teil.map(zeile).join("")}
+              <tr class="dok-zwischen"><td></td><td colspan="5">Zwischensumme ${titel}</td><td class="r">${z2(summe)}</td><td></td></tr>`;
+          }).join("") : pos.map(zeile).join("")}
         </tbody>
       </table>
 
@@ -144,6 +154,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   form.datum.onchange = () => feld({ [`${art}Datum`]: form.datum.value });
   form.text.onchange = () => feld({ [`${art}Text`]: form.text.value.trim() });
   form.mwst.onchange = () => feld({ mwst: form.mwst.value.trim() });
+  form.aufteilen.onchange = async () => { await store.setMeta("aufteilen", form.aufteilen.checked); ansicht(kopf, inhalt, id, art); };
   form.zusammen.onchange = async () => { await store.setMeta("stundenZusammen", form.zusammen.checked); ansicht(kopf, inhalt, id, art); };
   form.onsubmit = (e) => e.preventDefault();
   $("#kunde").onclick = () => kundeBearbeiten(store.get(id)).then(() => ansicht(kopf, inhalt, id, art));
