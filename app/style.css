@@ -325,6 +325,13 @@ body.vollbild { overflow: hidden; overscroll-behavior: none; }
 .dok-zahlen { display: flex; justify-content: space-between; align-items: center; background: #e6e6e6; padding: 6px 8px; margin-left: auto; width: calc(100% / 3); }
 .dok-zahlen span { font-weight: 700; }
 .dok-zahlen b { font-size: 14px; }
+.dok-steuer.mit-rand { border-top: 1.5px solid #000; }
+.dok-titel small { display: block; font-size: 11px; font-weight: 400; margin-top: 2px; }
+.superbill { margin: 10px 0; background: color-mix(in srgb, var(--blau) 8%, var(--karte)); }
+.sb-zeile { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; }
+.sb-text { flex: 1; background: var(--karte); border: 1px solid var(--linie); border-radius: 8px; padding: 8px 10px; font-size: 14px; user-select: all; }
+.sb-betraege { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-bottom: 6px; font-size: 14px; }
+.klein-btn { min-height: 34px; padding: 0 12px; font-size: 13px; }
 .dok-fusstext { margin: 10px 0 0; font-size: 11px; }
 @media (max-width: 600px) { .dok { padding: 16px 10px; font-size: 10.5px; } .dok-raster.vier { grid-template-columns: 1fr 1fr; } }
 

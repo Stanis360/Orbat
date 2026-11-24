@@ -4,7 +4,10 @@ import * as store from "./store.js";
 import * as preise from "./preise.js";
 import { $, esc, zahl, fmt, datum, heute, formular } from "./ui.js";
 
-export const ARTEN = { angebot: "Angebot", rechnung: "Rechnung" };
+export const ARTEN = { angebot: "Angebot", rechnung: "Rechnung", aufstellung: "Aufstellung" };
+// Die Aufstellung ist die Anlage zur Rechnung: gleiche Nummer, gleiches Datum
+const schluesselVon = (art) => (art === "aufstellung" ? "rechnung" : art);
+const STANDARD_SATZ = "Ausgeführte Arbeiten laut beiliegender Aufstellung – Baustelle {zielort}";
 const FIRMA_ID = "firma";
 
 export const firma = () => store.get(FIRMA_ID) || {};
@@ -38,6 +41,12 @@ export function positionen(b, { stundenZusammen }) {
   return pos;
 }
 
+// Satz für die Rechnung in SuperBill, mit Platzhaltern aus den Firmendaten
+export function satzFuerRechnung(f, b, nummer, datumText, einleitung) {
+  const werte = { zielort: b.adresse || b.name, baustelle: b.name, kunde: b.kunde || "", nummer, datum: datumText, einleitung: einleitung || "" };
+  return (f.satzVorlage || STANDARD_SATZ).replace(/\{(\w+)\}/g, (m, k) => (k in werte ? werte[k] : m)).replace(/\s+/g, " ").trim();
+}
+
 // ---------- Ansicht ----------
 export function ansicht(kopf, inhalt, id, art = "angebot") {
   const b = store.get(id);
@@ -64,9 +73,12 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const netto = r2(waren - rabatte);
   const steuer = r2((netto * satz) / 100);
   const nachlassZeile = (k) => (rabatt[k] ? `<tr class="dok-nachlass"><td></td><td colspan="5">abzgl. ${fmt(nachlass[k])} % Nachlass auf ${preise.ARTEN[k]}</td><td class="r">-${z2(rabatt[k])}</td><td></td></tr>` : "");
-  const nummer = b[`${art}Nr`] || String(nr(art));
-  const dokDatum = b[`${art}Datum`] || heute();
-  const text = b[`${art}Text`] ?? b.angebotText ?? "";
+  const sk = schluesselVon(art);
+  const nummer = b[`${sk}Nr`] || String(nr(sk));
+  const dokDatum = b[`${sk}Datum`] || heute();
+  const text = b[`${sk}Text`] ?? b.angebotText ?? "";
+  const datumText = new Date(dokDatum + "T12:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const istAufstellung = art === "aufstellung";
   const ohnePreis = allePos.filter((p) => p.preis == null);
   const empfaenger = (b.rechnungsadresse || [b.kunde, b.adresse].filter(Boolean).join("\n")).split("\n").map((z) => z.trim()).filter(Boolean);
   const firmaFehlt = !f.name;
@@ -79,8 +91,8 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
       ${ohnePreis.length ? `<p class="hinweisbox">Nicht aufgeführt, weil ohne Kundenpreis: ${ohnePreis.map((p) => esc(p.text)).join(", ")}. Falls das verrechnet werden soll, bitte den Kundenpreis nachtragen.</p>` : ""}
       <form class="karte form" id="dok-form">
         <div class="felder">
-          <label class="feld halb"><span>Nummer</span><input name="nr" value="${esc(nummer)}"></label>
-          <label class="feld halb"><span>Datum</span><input name="datum" type="date" value="${esc(dokDatum)}"></label>
+          <label class="feld halb"><span>${istAufstellung ? "Rechnungs-Nr. (wie in SuperBill)" : "Nummer"}</span><input name="nr" value="${esc(nummer)}"></label>
+          <label class="feld halb"><span>${istAufstellung ? "Rechnungsdatum" : "Datum"}</span><input name="datum" type="date" value="${esc(dokDatum)}"></label>
           <label class="feld"><span>Einleitung (erste Zeile, z.B. „Liefern und verlegen der Wand- und Bodenfliesen für das Bad“)</span><input name="text" value="${esc(text)}"></label>
           <label class="feld halb"><span>MwSt. %</span><input name="mwst" inputmode="decimal" value="${esc(fmt(satz))}"></label>
           <label class="feld halb"><span>Nachlass Material %</span><input name="nachlassMaterial" inputmode="decimal" value="${esc(b.nachlassMaterial || "")}" placeholder="0"></label>
@@ -89,6 +101,16 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
           <label class="feld check"><input type="checkbox" name="aufteilen" ${aufteilen ? "checked" : ""}><span>In Material und Arbeit aufteilen (mit Zwischensummen)</span></label>
         </div>
       </form>
+      ${art !== "angebot" ? `<div class="karte superbill">
+        <b>Für SuperBill</b> <small class="leise">– Text und Beträge für die elektronische Rechnung</small>
+        <div class="sb-zeile"><span class="sb-text" id="sb-satz">${esc(satzFuerRechnung(f, b, nummer, datumText, text))}</span><button class="btn klein-btn" data-kopie="sb-satz">Kopieren</button></div>
+        <div class="sb-betraege">
+          <span>Netto <b id="sb-netto">${z2(netto)}</b> <button class="btn klein-btn" data-kopie="sb-netto">Kopieren</button></span>
+          <span>MwSt. ${fmt(satz)} % <b>${z2(steuer)}</b></span>
+          <span>Gesamt <b>${z2(netto + steuer)}</b></span>
+        </div>
+        <small class="leise">Den Satz änderst du unter ⚙ Einstellungen → Firmendaten → „Satz für die Rechnung“.</small>
+      </div>` : ""}
       <div class="knopfreihe"><button class="btn primaer" id="drucken">🖨 Drucken / als PDF speichern</button>
         <button class="btn" id="kunde">✎ Empfänger / Kundendaten</button></div>
     </div>
@@ -103,9 +125,9 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
       </header>
 
       <div class="dok-raster dokkopf">
-        <div class="dok-titel">${ARTEN[art]}</div>
-        <div class="zelle"><small>Datum</small><b>${new Date(dokDatum + "T12:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</b></div>
-        <div class="zelle"><small>Nummer</small><b>${esc(nummer)}</b></div>
+        <div class="dok-titel">${ARTEN[art]}${istAufstellung ? `<small>Anlage zur Rechnung Nr. ${esc(nummer)} vom ${datumText}</small>` : ""}</div>
+        <div class="zelle"><small>${istAufstellung ? "Rechnungsdatum" : "Datum"}</small><b>${datumText}</b></div>
+        <div class="zelle"><small>${istAufstellung ? "Zu Rechnung Nr." : "Nummer"}</small><b>${esc(nummer)}</b></div>
       </div>
       <div class="dok-raster zwei">
         <div class="zelle hoch"><small>Zielort</small><b>${esc(b.adresse || b.name)}</b></div>
@@ -137,14 +159,14 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
       </table>
 
       <footer class="dok-fuss">
-        <div class="dok-raster bank">
+        ${istAufstellung ? "" : `<div class="dok-raster bank">
           <div class="zelle hoch"><small>Zahlungsart</small><b>${esc(f.zahlungsart || "Überweisung")}</b></div>
           <div class="zelle"><small>Referenzbank</small><b>${esc(f.bank || "")}&nbsp;</b></div>
           <div class="zelle"><small>Bankeinzug von</small><b>&nbsp;</b></div>
           <div class="zelle"><small>IBAN - SWIFT</small><b>${esc([f.iban, f.bic].filter(Boolean).join(" - "))}&nbsp;</b></div>
           <div class="zelle"><small>IBAN - SWIFT</small><b>&nbsp;</b></div>
-        </div>
-        <table class="dok-steuer">
+        </div>`}
+        <table class="dok-steuer ${istAufstellung ? "mit-rand" : ""}">
           <tr><th>USt.-Id. - Bezeichnung</th><th class="r">Nettobetrag</th><th class="r">Steuersatz</th><th class="r">MWSt.</th></tr>
           <tr><td>${fmt(satz)} - MwSt. ${fmt(satz)}%</td><td class="r">${z2(netto)}</td><td class="r">${z2(satz)}%</td><td class="r">${z2(steuer)}</td></tr>
         </table>
@@ -166,23 +188,27 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
 
   const form = $("#dok-form");
   const feld = async (daten) => { await store.speichern({ ...store.get(id), ...daten }); ansicht(kopf, inhalt, id, art); };
-  form.nr.onchange = () => feld({ [`${art}Nr`]: form.nr.value.trim() });
-  form.datum.onchange = () => feld({ [`${art}Datum`]: form.datum.value });
-  form.text.onchange = () => feld({ [`${art}Text`]: form.text.value.trim() });
+  form.nr.onchange = () => feld({ [`${sk}Nr`]: form.nr.value.trim() });
+  form.datum.onchange = () => feld({ [`${sk}Datum`]: form.datum.value });
+  form.text.onchange = () => feld({ [`${sk}Text`]: form.text.value.trim() });
   form.mwst.onchange = () => feld({ mwst: form.mwst.value.trim() });
   form.nachlassMaterial.onchange = () => feld({ nachlassMaterial: form.nachlassMaterial.value.trim() });
   form.nachlassArbeit.onchange = () => feld({ nachlassArbeit: form.nachlassArbeit.value.trim() });
   form.aufteilen.onchange = async () => { await store.setMeta("aufteilen", form.aufteilen.checked); ansicht(kopf, inhalt, id, art); };
   form.zusammen.onchange = async () => { await store.setMeta("stundenZusammen", form.zusammen.checked); ansicht(kopf, inhalt, id, art); };
   form.onsubmit = (e) => e.preventDefault();
+  inhalt.querySelectorAll("[data-kopie]").forEach((k) => (k.onclick = async () => {
+    const t = $("#" + k.dataset.kopie).textContent;
+    try { await navigator.clipboard.writeText(t); k.textContent = "✓ Kopiert"; } catch { prompt("Zum Kopieren:", t); }
+  }));
   $("#kunde").onclick = () => kundeBearbeiten(store.get(id)).then(() => ansicht(kopf, inhalt, id, art));
   $("#drucken").onclick = async () => {
     // Nummer und Datum beim ersten Drucken festhalten und den Zähler weiterzählen
     const akt = store.get(id);
-    if (!akt[`${art}Nr`]) {
-      await store.speichern({ ...akt, [`${art}Nr`]: nummer, [`${art}Datum`]: dokDatum });
+    if (!akt[`${sk}Nr`]) {
+      await store.speichern({ ...akt, [`${sk}Nr`]: nummer, [`${sk}Datum`]: dokDatum });
       const n = zahl(nummer);
-      if (n != null && n >= nr(art)) await firmaSpeichern({ [`nr_${art}`]: String(n + 1) });
+      if (n != null && n >= nr(sk)) await firmaSpeichern({ [`nr_${sk}`]: String(n + 1) });
     }
     const alterTitel = document.title;
     document.title = `${ARTEN[art]} ${nummer} ${b.kunde || b.name}`.replace(/[\\/:*?"<>|]/g, "-");
@@ -225,6 +251,7 @@ export function firmaFormular() {
         <label class="feld halb"><span>MwSt. % (Standard)</span><input name="mwst" inputmode="decimal" value="${esc(f.mwst ?? store.getMeta("mwst", "20"))}"></label>
         <label class="feld halb"><span>Nächste Angebots-Nr.</span><input name="nr_angebot" inputmode="numeric" value="${esc(String(nr("angebot")))}"></label>
         <label class="feld halb"><span>Nächste Rechnungs-Nr.</span><input name="nr_rechnung" inputmode="numeric" value="${esc(String(nr("rechnung")))}"></label>
+        <label class="feld"><span>Satz für die Rechnung (SuperBill) – Platzhalter: {zielort} {kunde} {baustelle} {nummer} {datum} {einleitung}</span><textarea name="satzVorlage" rows="3" placeholder="${esc(STANDARD_SATZ)}">${esc(f.satzVorlage || "")}</textarea></label>
         <label class="feld"><span>Fußtext (optional, z.B. Gültigkeit, Zahlungsziel)</span><input name="fusstext" value="${esc(f.fusstext || "")}"></label>
       </div>
       <div class="knopfreihe"><button class="btn primaer" type="submit">Firmendaten speichern</button></div>
