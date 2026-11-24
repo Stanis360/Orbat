@@ -106,7 +106,7 @@ function ansichtListe() {
   $("#neu").onclick = () => baustelleBearbeiten();
 }
 
-const baustelleFelder = () => [
+const baustelleFelder = (b) => [
   { n: "name", l: "Bezeichnung", pflicht: true, platzhalter: "z.B. Bad Müller" },
   { n: "kunde", l: "Kunde / Auftraggeber", liste: [...new Set(store.liste("baustelle").map((b) => b.kunde).filter(Boolean))] },
   { n: "telefon", l: "Telefon", typ: "tel", halb: true },
@@ -114,13 +114,14 @@ const baustelleFelder = () => [
   { n: "adresse", l: "Adresse" },
   { n: "beginn", l: "Beginn", typ: "date", halb: true, standard: heute() },
   { n: "ende", l: "Fertig bis", typ: "date", halb: true },
+  { n: "mwst", l: "MwSt.", typ: "select", opt: dokument.mwstOptionen(b?.mwst || ""), halb: true },
   { n: "baugenehmigung", l: "Baugenehmigung (Nr. / Datum)", halb: true, platzhalter: "z.B. Nr. 45/2026 vom 12.03.2026" },
   { n: "bauparzelle", l: "Bauparzelle / K.G.", halb: true, platzhalter: "z.B. Bp. 123, K.G. Gais" },
   { n: "notiz", l: "Notizen", typ: "textarea" },
 ];
 
 async function baustelleBearbeiten(b) {
-  const erg = await formular({ titel: b ? "Baustelle bearbeiten" : "Neue Baustelle", felder: baustelleFelder(), werte: b || {}, loeschbar: !!b });
+  const erg = await formular({ titel: b ? "Baustelle bearbeiten" : "Neue Baustelle", felder: baustelleFelder(b), werte: b || {}, loeschbar: !!b });
   if (!erg) return;
   if (erg.__loeschen) { await store.loeschen(b.id); location.hash = "#/"; return; }
   const neu = await store.speichern({ ...(b || { typ: "baustelle" }), ...erg });
@@ -164,6 +165,7 @@ function tabInfo(b, ziel) {
       ${b.adresse ? `<div class="zeile"><span class="leise">Adresse</span><a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.adresse)}">${esc(b.adresse)}</a></div>` : ""}
       ${b.beginn ? `<div class="zeile"><span class="leise">Beginn</span><span>${datum(b.beginn)}</span></div>` : ""}
       ${b.ende ? `<div class="zeile"><span class="leise">Fertig bis</span><span>${datum(b.ende)}</span></div>` : ""}
+      <div class="zeile"><span class="leise">MwSt.</span><span>${fmt(preise.mwst(b))} %${b.mwst ? "" : " (Standard)"}</span></div>
       ${b.baugenehmigung ? `<div class="zeile"><span class="leise">Baugenehmigung</span><span>${esc(b.baugenehmigung)}</span></div>` : ""}
       ${b.bauparzelle ? `<div class="zeile"><span class="leise">Bauparzelle</span><span>${esc(b.bauparzelle)}</span></div>` : ""}
       ${b.notiz ? `<div class="notiz">${esc(b.notiz)}</div>` : ""}

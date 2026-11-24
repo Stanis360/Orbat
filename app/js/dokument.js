@@ -15,6 +15,14 @@ export async function firmaSpeichern(daten) {
   return store.speichern({ ...(store.get(FIRMA_ID) || { id: FIRMA_ID, typ: "firma" }), ...daten });
 }
 
+// MwSt.-Auswahl pro Baustelle: leer = Standard aus den Firmendaten
+export function mwstOptionen(aktuell) {
+  const std = zahl(firma().mwst) ?? zahl(store.getMeta("mwst", "")) ?? 20;
+  const opt = [["", `Standard (${fmt(std)} %)`], ["0", "0 % (z.B. Firmen)"], ["4", "4 %"], ["5", "5 %"], ["10", "10 %"], ["22", "22 %"]];
+  if (aktuell && !opt.some(([k]) => zahl(k) === zahl(aktuell))) opt.push([aktuell, `${aktuell} %`]);
+  return opt.map(([k, l]) => [k !== "" && zahl(k) === zahl(aktuell) ? aktuell : k, l]);
+}
+
 // Zahlen wie in der Vorlage: 1.234,56 (ohne €-Zeichen)
 const z2 = (n) => (n ?? 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const nr = (art) => zahl(firma()[`nr_${art}`]) || 1;
@@ -103,13 +111,14 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
           <label class="feld halb"><span>${istAufstellung ? "Rechnungs-Nr. (wie in SuperBill)" : "Nummer"}</span><input name="nr" value="${esc(nummer)}"></label>
           <label class="feld halb"><span>${istAufstellung ? "Rechnungsdatum" : "Datum"}</span><input name="datum" type="date" value="${esc(dokDatum)}"></label>
           <label class="feld"><span>Einleitung (erste Zeile, z.B. „Liefern und verlegen der Wand- und Bodenfliesen für das Bad“)</span><input name="text" value="${esc(text)}"></label>
-          <label class="feld halb"><span>MwSt. %</span><input name="mwst" inputmode="decimal" value="${esc(fmt(satz))}"></label>
+          <label class="feld halb"><span>MwSt.</span><select name="mwst">${mwstOptionen(b.mwst || "").map(([k, l]) => `<option value="${esc(k)}" ${k === (b.mwst || "") ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
           <label class="feld halb"><span>Nachlass Material %</span><input name="nachlassMaterial" inputmode="decimal" value="${esc(b.nachlassMaterial || "")}" placeholder="0"></label>
           <label class="feld halb"><span>Nachlass Arbeit %</span><input name="nachlassArbeit" inputmode="decimal" value="${esc(b.nachlassArbeit || "")}" placeholder="0"></label>
           <label class="feld check halb"><input type="checkbox" name="zusammen" ${zusammen ? "checked" : ""}><span>Stunden zusammenfassen</span></label>
           <label class="feld check"><input type="checkbox" name="aufteilen" ${aufteilen ? "checked" : ""}><span>In Material und Arbeit aufteilen (mit Zwischensummen)</span></label>
         </div>
       </form>
+      ${satz === 0 && !f.hinweis0 ? `<p class="warnbox">0 % MwSt.: Es ist noch kein Hinweistext hinterlegt (z.B. zur Umkehr der Steuerschuldnerschaft). <a class="link" href="#/einstellungen">In den Firmendaten eintragen</a></p>` : ""}
       ${art !== "angebot" ? `<div class="karte superbill">
         <b>Für SuperBill</b> <small class="leise">– Text und Beträge für die elektronische Rechnung</small>
         ${fehlt.length ? `<p class="warnbox klein">Für den Satz fehlt noch: ${fehlt.join(", ")}. <a class="link" href="#" id="sb-daten">Jetzt eintragen</a></p>` : ""}
@@ -193,6 +202,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
           </div>
           <div class="dok-zahlen"><span>Zu zahlen gesamt</span><b>${z2(netto + steuer)}</b></div>
         </div>
+        ${satz === 0 && f.hinweis0 ? `<p class="dok-fusstext dok-hinweis0">${esc(f.hinweis0)}</p>` : ""}
         ${f.fusstext ? `<p class="dok-fusstext">${esc(f.fusstext)}</p>` : ""}
       </footer>
     </article>`;
@@ -269,6 +279,7 @@ export function firmaFormular() {
         <label class="feld"><span>Bank</span><input name="bank" value="${esc(f.bank || "")}"></label>
         <label class="feld halb"><span>IBAN</span><input name="iban" value="${esc(f.iban || "")}" autocapitalize="characters"></label>
         <label class="feld halb"><span>BIC / SWIFT (optional)</span><input name="bic" value="${esc(f.bic || "")}" autocapitalize="characters"></label>
+        <label class="feld"><span>Hinweis bei 0 % MwSt. (erscheint dann auf Angebot, Rechnung und Aufstellung)</span><textarea name="hinweis0" rows="2" placeholder="z.B. Vermerk zur Umkehr der Steuerschuldnerschaft (Reverse Charge) – Wortlaut vom Steuerberater">${esc(f.hinweis0 || "")}</textarea></label>
         <label class="feld halb"><span>MwSt. % (Standard)</span><input name="mwst" inputmode="decimal" value="${esc(f.mwst ?? store.getMeta("mwst", "20"))}"></label>
         <label class="feld halb"><span>Nächste Angebots-Nr.</span><input name="nr_angebot" inputmode="numeric" value="${esc(String(nr("angebot")))}"></label>
         <label class="feld halb"><span>Nächste Rechnungs-Nr.</span><input name="nr_rechnung" inputmode="numeric" value="${esc(String(nr("rechnung")))}"></label>
