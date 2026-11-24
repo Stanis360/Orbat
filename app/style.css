@@ -276,6 +276,7 @@ body.vollbild { overflow: hidden; overscroll-behavior: none; }
 .bericht-fotos figcaption { font-size: 12px; color: #444; margin-top: 3px; }
 /* ---------- Angebot / Rechnung (Stil wie Vorlage) ---------- */
 .warnbox { background: color-mix(in srgb, var(--orange) 16%, var(--karte)); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0 0 10px; }
+.hinweisbox { background: color-mix(in srgb, var(--blau) 12%, var(--karte)); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0 0 10px; }
 .dok-steuerung .form { margin-top: 4px; }
 .dok-steuerung .felder { align-items: flex-end; }
 .dok {

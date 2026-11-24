@@ -47,13 +47,15 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const f = firma();
   const satz = preise.mwst(b);
   const zusammen = store.getMeta("stundenZusammen", false);
-  const pos = positionen(b, { stundenZusammen: zusammen });
+  // Positionen ohne Kundenpreis (z.B. Verbrauchsmaterial wie Silikon-Tuben) kommen nicht aufs Dokument
+  const allePos = positionen(b, { stundenZusammen: zusammen });
+  const pos = allePos.filter((p) => p.preis != null);
   const netto = pos.reduce((s, p) => s + (p.preis != null ? p.menge * p.preis : 0), 0);
   const steuer = Math.round(netto * satz) / 100;
   const nummer = b[`${art}Nr`] || String(nr(art));
   const dokDatum = b[`${art}Datum`] || heute();
   const text = b[`${art}Text`] ?? b.angebotText ?? "";
-  const ohnePreis = pos.filter((p) => p.preis == null).length;
+  const ohnePreis = allePos.filter((p) => p.preis == null);
   const empfaenger = (b.rechnungsadresse || [b.kunde, b.adresse].filter(Boolean).join("\n")).split("\n").map((z) => z.trim()).filter(Boolean);
   const firmaFehlt = !f.name;
 
@@ -61,7 +63,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
     <div class="nicht-drucken dok-steuerung">
       <div class="filter">${Object.entries(ARTEN).map(([k, l]) => `<a class="chip ${k === art ? "aktiv" : ""}" href="#/dok/${id}/${k}">${l}</a>`).join("")}</div>
       ${firmaFehlt ? `<p class="warnbox">Deine Firmendaten fehlen noch (Name, Adresse, Steuernummer, Bank). <a class="link" href="#/einstellungen">Jetzt unter ⚙ Einstellungen eintragen</a></p>` : ""}
-      ${ohnePreis ? `<p class="warnbox">${ohnePreis} Position(en) ohne Kundenpreis – bitte in Stunden/Material nachtragen.</p>` : ""}
+      ${ohnePreis.length ? `<p class="hinweisbox">Nicht aufgeführt, weil ohne Kundenpreis: ${ohnePreis.map((p) => esc(p.text)).join(", ")}. Falls das verrechnet werden soll, bitte den Kundenpreis nachtragen.</p>` : ""}
       <form class="karte form" id="dok-form">
         <div class="felder">
           <label class="feld halb"><span>Nummer</span><input name="nr" value="${esc(nummer)}"></label>

@@ -424,7 +424,9 @@ export function listeLesen(text) {
     const a = {};
     reihenfolge.forEach((k, i) => { if (k && w[i] != null && w[i] !== "") a[k] = w[i]; });
     if (a.ek) a.ek = geld(a.ek);
-    if (a.vk) a.vk = geld(a.vk);
+    // "-" beim Kundenpreis = wird nicht verrechnet (kein automatischer Aufschlag)
+    if (a.vk && /^[-–—]$/.test(a.vk.trim())) { a.vk = ""; a.nichtVerrechnen = true; }
+    else if (a.vk) a.vk = geld(a.vk);
     return a;
   }).filter((a) => a.name);
 }
@@ -435,8 +437,9 @@ function listeEinfuegen() {
       <h3>Liste einfügen</h3>
       <p class="leise klein">Eine Zeile pro Material. Am einfachsten in <b>Excel</b> die Zeilen markieren, kopieren und hier einfügen.
       Reihenfolge der Spalten: <b>Name; Einheit; Einkaufspreis; Kundenpreis; Kategorie; Lieferant; Artikelnummer</b>.
-      Mit Überschriftenzeile (z.B. „Name, Einheit, EK, VK“) dürfen die Spalten auch anders sortiert sein. Nur der Name ist Pflicht.</p>
-      <textarea name="text" rows="9" placeholder="Fliesenkleber flexibel; Sack; 12,90; 18,50; Fliesen; Baumarkt&#10;Silikon sanitär weiß; Stk; 6,20; 9,90; Fliesen&#10;Gipskartonplatte 12,5 mm; m²; 3,80; 6,50; Trockenbau"></textarea>
+      Mit Überschriftenzeile (z.B. „Name, Einheit, EK, VK“) dürfen die Spalten auch anders sortiert sein. Nur der Name ist Pflicht.
+      Ein <b>„-“ als Kundenpreis</b> heißt: wird nicht verrechnet (z.B. Silikon-Tuben, wenn der Kunde pro lm zahlt) – kommt dann nicht aufs Angebot.</p>
+      <textarea name="text" rows="9" placeholder="Fliesenkleber flexibel; Sack; 12,90; 18,50; Fliesen; Baumarkt&#10;Silikon Tube sanitär weiß; Stk; 6,20; -; Material&#10;Silikon verfugen; lm; ; 4,30; Fliesen"></textarea>
       <label class="feld check"><input type="checkbox" name="auto" checked><span>Fehlenden Kundenpreis aus Einkauf + ${esc(store.getMeta("aufschlag", "20"))} % berechnen</span></label>
       <p class="dlg-info" data-info>Noch nichts eingefügt.</p>
       <div class="dlg-knoepfe"><span class="platz"></span>
@@ -458,8 +461,9 @@ function listeEinfuegen() {
   $("[data-abbrechen]", form).onclick = () => dialog.close();
   form.onsubmit = async (e) => {
     e.preventDefault();
-    for (const neu of gelesen) {
-      if (form.auto.checked && !neu.vk && neu.ek) neu.vk = vkAusEk(zahl(neu.ek));
+    for (const eintrag of gelesen) {
+      const { nichtVerrechnen, ...neu } = eintrag;
+      if (form.auto.checked && !nichtVerrechnen && !neu.vk && neu.ek) neu.vk = vkAusEk(zahl(neu.ek));
       const alt = artikelNachName(neu.name);
       await store.speichern({ ...(alt || { typ: "artikel", einheit: "Stk" }), ...neu });
     }
