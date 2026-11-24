@@ -20,6 +20,14 @@ Sobald ein Gerät den **kleinen Server auf deinem PC zu Hause** erreicht, gleich
 - **Bestellungen** (Startseite): alles, was auf allen Baustellen noch zu bestellen oder schon bestellt ist. Mit **„Liste senden“** geht die Bestellliste, nach Lieferant sortiert, per WhatsApp oder E-Mail raus.
 - **Preise bleiben fest**: Änderst du später einen Preis in der Preisliste, bleiben bereits eingetragene Stunden und Materialien beim alten Preis.
 - **Fotos** pro Baustelle: direkt mit der Kamera aufnehmen oder mehrere aus der Galerie wählen. Die Fotos sind nach Tag sortiert und bekommen eine Notiz. In der Vollbild-Ansicht blätterst du per Wischen oder mit den Pfeiltasten und kannst ein Foto herunterladen. Die App verkleinert jedes Foto automatisch auf max. 1920 px (ca. 200–400 KB).
+- **Angebot und Rechnung** pro Baustelle zum Drucken oder als PDF, im klassischen Layout:
+  - Firmenkopf, Datum, Nummer, Zielort, Empfänger, Kundennummer
+  - Positionen mit Code, Beschreibung, ME, Menge, Einzelpreis, Betrag und USt.
+  - Unten Zahlungsart, Bank/IBAN, MwSt.-Aufstellung, Betrag Details und „Zu zahlen gesamt“
+  - Die Positionen kommen automatisch aus Material/Leistungen und Stunden der Baustelle. Die Stunden lassen sich pro Eintrag (mit Tätigkeit) oder pro Stundensatz zusammengefasst ausweisen.
+  - Nummern laufen automatisch weiter, getrennt für Angebote und Rechnungen. Die Nummer wird beim ersten Drucken vergeben und lässt sich ändern.
+  - Die Einleitungszeile (z.B. „Liefern und verlegen der Wand- und Bodenfliesen für das Bad“) und die MwSt. stellst du pro Baustelle ein.
+  - Deine **Firmendaten** trägst du einmal unter ⚙ Einstellungen ein. Sie werden auf alle Geräte synchronisiert.
 - **Bericht** pro Baustelle zum Drucken oder als PDF: Arbeitszeit und Material mit Kundenpreisen, Summe netto, MwSt. und brutto. Dazu kommen Maße, Grundrisse und auf Wunsch Fotos. Die Preise lassen sich ausblenden, z.B. für einen reinen Leistungsnachweis. Den MwSt.-Satz stellst du unter ⚙ ein (Standard 20 %).
 - **Export** aller Stunden und des Materials als CSV für Excel. Außerdem gibt es eine **Sicherung** als Datei, und der Server legt jeden Tag automatisch eine Sicherung an.
 
@@ -129,6 +137,7 @@ app/js/sync.js       Abgleich mit dem Server (Änderungen seit letzter Sequenznu
 app/js/grundriss.js  Grundriss-Editor (SVG)
 app/js/fotos.js      Fotos verkleinern, Vollbild-Ansicht
 app/js/preise.js     Preisliste, Stundensätze, Material + Bestellstatus, Bestellliste
+app/js/dokument.js   Angebot / Rechnung, Firmendaten
 app/js/ui.js         Gemeinsame Hilfen (Formular-Dialog, Formatierung)
 app/sw.js            Service Worker (App offline verfügbar, nur über https/localhost)
 daten/               Datenbestand + tägliche Sicherungen (wird angelegt, nicht im Git)

@@ -3,6 +3,7 @@ import * as sync from "./sync.js";
 import { editor, vorschauSvg } from "./grundriss.js";
 import * as fotos from "./fotos.js";
 import * as preise from "./preise.js";
+import * as dokument from "./dokument.js";
 import { $, esc, zahl, fmt, euro, heute, datum, nachDatum, formular, herunterladen, dialog } from "./ui.js";
 
 const inhalt = $("#inhalt");
@@ -165,6 +166,7 @@ function tabInfo(b, ziel) {
     </div>
     <div class="knopfreihe">
       <button class="btn" id="bearbeiten">✎ Bearbeiten</button>
+      <a class="btn primaer" href="#/dok/${b.id}/angebot">📄 Angebot / Rechnung</a>
       <a class="btn" href="#/bericht/${b.id}">🖨 Bericht / PDF</a>
     </div>`;
   $("#bearbeiten").onclick = () => baustelleBearbeiten(b);
@@ -388,7 +390,7 @@ function ansichtBericht(id) {
   const mitFotos = store.getMeta("berichtFotos", true);
   const mitPreisen = store.getMeta("berichtPreise", true);
   const s = summen(id);
-  const netto = s.stdVk + s.matVk, satzMwst = preise.mwst();
+  const netto = s.stdVk + s.matVk, satzMwst = preise.mwst(b);
   const betrag = (v) => (v == null ? "" : euro(v));
   inhalt.innerHTML = `
     <div class="knopfreihe nicht-drucken"><button class="btn primaer" onclick="print()">🖨 Drucken / als PDF speichern</button>
@@ -450,10 +452,12 @@ function ansichtEinstellungen() {
     <h2>Allgemein</h2>
     <form class="karte form" id="allg-form">
       <label class="feld"><span>Mein Name (Vorschlag bei Stunden)</span><input name="name" value="${esc(store.getMeta("name", ""))}"></label>
-      <label class="feld"><span>MwSt. in % (für den Bericht)</span><input name="mwst" inputmode="decimal" value="${esc(store.getMeta("mwst", "20"))}"></label>
       <p class="leise klein">Stundensätze und Materialpreise pflegst du in der <a class="link" href="#/preise">Preisliste</a>.</p>
       <div class="knopfreihe"><button class="btn" type="submit">Speichern</button></div>
     </form>
+
+    <h2>Firmendaten (für Angebot &amp; Rechnung)</h2>
+    ${dokument.firmaFormular()}
 
     <h2>Datensicherung</h2>
     <div class="karte form">
@@ -475,10 +479,10 @@ function ansichtEinstellungen() {
     await sync.jetzt();
     ansichtEinstellungen();
   };
+  dokument.firmaVerknuepfen();
   $("#allg-form").onsubmit = async (e) => {
     e.preventDefault();
     await store.setMeta("name", e.target.name.value.trim());
-    await store.setMeta("mwst", e.target.mwst.value.trim() || "20");
     e.target.querySelector("button").textContent = "✓ Gespeichert";
   };
   $("#export").onclick = () => herunterladen(`baustellen-sicherung-${heute()}.json`, JSON.stringify({ app: "baustellen", version: 1, records: store.alles() }), "application/json");
@@ -522,6 +526,7 @@ function zeigen() {
   else if (teile[0] === "bericht" && teile[1]) ansichtBericht(teile[1]);
   else if (teile[0] === "einstellungen") ansichtEinstellungen();
   else if (teile[0] === "preise") preise.ansichtPreisliste(kopf, inhalt, teile[1] || "material");
+  else if (teile[0] === "dok" && teile[1]) dokument.ansicht(kopf, inhalt, teile[1], teile[2]);
   else if (teile[0] === "bestellen") preise.ansichtBestellen(kopf, inhalt);
   else ansichtListe();
 }

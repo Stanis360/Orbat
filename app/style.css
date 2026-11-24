@@ -274,7 +274,61 @@ body.vollbild { overflow: hidden; overscroll-behavior: none; }
 .bericht-fotos figure { margin: 0; break-inside: avoid; }
 .bericht-fotos img { width: 100%; max-height: 300px; object-fit: contain; background: #f4f4f4; border-radius: 6px; display: block; }
 .bericht-fotos figcaption { font-size: 12px; color: #444; margin-top: 3px; }
+/* ---------- Angebot / Rechnung (Stil wie Vorlage) ---------- */
+.warnbox { background: color-mix(in srgb, var(--orange) 16%, var(--karte)); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0 0 10px; }
+.dok-steuerung .form { margin-top: 4px; }
+.dok-steuerung .felder { align-items: flex-end; }
+.dok {
+  background: #fff; color: #000; font: 12px/1.35 Arial, Helvetica, sans-serif;
+  padding: 28px 24px; margin-top: 14px; border-radius: 6px; overflow-x: auto;
+}
+.dok b { font-weight: 700; }
+.dok-firma { text-align: right; margin-bottom: 28px; }
+.dok-firma > b { font-size: 19px; display: block; margin-bottom: 2px; }
+.dok-raster { display: grid; border: 1.5px solid #000; border-top: 0; }
+.dok-raster.dokkopf { border: 0; grid-template-columns: 1fr minmax(110px, .55fr) minmax(110px, .55fr); }
+.dok-raster.dokkopf .zelle { border: 1.5px solid #000; border-left: 0; }
+.dok-raster.dokkopf .zelle:nth-child(2) { border-left: 1.5px solid #000; }
+.dok-titel { font-size: 21px; font-weight: 700; text-align: right; align-self: center; padding-right: 12px; }
+.dok-raster.zwei { grid-template-columns: 1fr 1fr; border-top: 1.5px solid #000; margin-top: -1.5px; }
+.dok-raster.vier { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.dok-raster .zelle { padding: 5px 7px; min-width: 0; overflow-wrap: anywhere; }
+.dok-raster .zelle + .zelle { border-left: 1.5px solid #000; }
+.dok-raster .zelle.hoch { min-height: 76px; }
+.dok-raster small { display: block; font-size: 10px; margin-bottom: 2px; }
+.dok-pos { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.dok-pos th { background: #e6e6e6; border: 1.5px solid #000; border-left: 0; border-right: 0; text-align: left; padding: 6px 5px; font-size: 12px; }
+.dok-pos td { padding: 3px 5px; vertical-align: top; }
+.dok-pos tbody tr:first-child td { padding-top: 10px; }
+.dok-pos .r, .dok-steuer .r { text-align: right; white-space: nowrap; }
+.dok-pos td:nth-child(2) { width: 44%; }
+.dok-fuss { margin-top: 80px; break-inside: avoid; }
+.dok-raster.bank { grid-template-columns: .9fr 1.6fr 1.6fr; grid-template-rows: auto auto; border-top: 1.5px solid #000; }
+.dok-raster.bank .zelle:first-child { grid-row: span 2; }
+.dok-raster.bank .zelle:nth-child(4) { border-top: 1.5px solid #000; }
+.dok-raster.bank .zelle:nth-child(5) { border-top: 1.5px solid #000; }
+.dok-steuer { width: 100%; border-collapse: collapse; border: 1.5px solid #000; border-top: 0; }
+.dok-steuer th { background: #e6e6e6; text-align: left; padding: 4px 6px; border-bottom: 1.5px solid #000; }
+.dok-steuer td { padding: 4px 6px; }
+.dok-steuer th + th, .dok-steuer td + td { border-left: 1.5px solid #000; }
+.dok-details { border: 1.5px solid #000; border-top: 0; }
+.dok-details-titel { background: #e6e6e6; text-align: center; font-weight: 700; padding: 4px; border-bottom: 1.5px solid #000; }
+.dok-raster.sechs { grid-template-columns: repeat(3, 1fr); border: 0; }
+.dok-raster.sechs .zelle { border-bottom: 1.5px solid #000; min-height: 46px; display: flex; flex-direction: column; justify-content: space-between; }
+.dok-raster.sechs .zelle:nth-child(3n+1) { border-left: 0; }
+.dok-raster.sechs b.r { text-align: right; }
+.dok-zahlen { display: flex; justify-content: space-between; align-items: center; background: #e6e6e6; padding: 6px 8px; margin-left: auto; width: calc(100% / 3); }
+.dok-zahlen span { font-weight: 700; }
+.dok-zahlen b { font-size: 14px; }
+.dok-fusstext { margin: 10px 0 0; font-size: 11px; }
+@media (max-width: 600px) { .dok { padding: 16px 10px; font-size: 10.5px; } .dok-raster.vier { grid-template-columns: 1fr 1fr; } }
+
 @media print {
+  .dok { padding: 0; margin: 0; border-radius: 0; overflow: visible; font-size: 11.5px; }
+  .dok-raster.vier { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .dok-pos thead { display: table-header-group; }
+  .dok-pos tr { break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .kopf, .nicht-drucken, .fab { display: none !important; }
   body, main { background: #fff; padding: 0; max-width: none; }
   .bericht { padding: 0; }

@@ -2,7 +2,7 @@
 import * as store from "./store.js";
 import { $, esc, zahl, fmt, euro, heute, datum, nachDatum, formular, herunterladen, dialog } from "./ui.js";
 
-export const EINHEITEN = ["Stk", "m", "m²", "m³", "kg", "t", "l", "Sack", "Eimer", "Rolle", "Paket", "Karton", "Palette", "Std", "pauschal"];
+export const EINHEITEN = ["Stk", "m", "lm", "m²", "m³", "kg", "t", "l", "Sack", "Eimer", "Rolle", "Paket", "Karton", "Palette", "Std", "pauschal"];
 export const MSTATUS = { zu_bestellen: "Zu bestellen", bestellt: "Bestellt", vorhanden: "Vorhanden" };
 const NAECHSTER = { zu_bestellen: "bestellt", bestellt: "vorhanden", vorhanden: "zu_bestellen" };
 
@@ -20,7 +20,8 @@ const menge = (m) => zahl(m.menge) || 0;
 export const matEk = (m) => (zahl(m.preis) != null ? menge(m) * zahl(m.preis) : null);
 export const matVk = (m) => (zahl(m.vk) != null ? menge(m) * zahl(m.vk) : null);
 export const stdVk = (s) => (zahl(s.stundenpreis) != null ? (zahl(s.stunden) || 0) * zahl(s.stundenpreis) : null);
-export const mwst = () => zahl(store.getMeta("mwst", "20")) ?? 20;
+// MwSt.: Baustelle > Firmendaten > alte Geräte-Einstellung > 20 %
+export const mwst = (b) => zahl(b?.mwst) ?? zahl(store.get("firma")?.mwst) ?? zahl(store.getMeta("mwst", "")) ?? 20;
 const aufschlag = () => zahl(store.getMeta("aufschlag", "20")) ?? 20;
 const preisText = (v) => (zahl(v) == null ? "" : zahl(v).toLocaleString("de-DE", { minimumFractionDigits: Number.isInteger(zahl(v)) ? 0 : 2, maximumFractionDigits: 2, useGrouping: false }));
 const vkAusEk = (ek) => (ek == null ? "" : preisText(Math.round(ek * (1 + aufschlag() / 100) * 100) / 100));
