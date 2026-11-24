@@ -51,8 +51,19 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   // Positionen ohne Kundenpreis (z.B. Verbrauchsmaterial wie Silikon-Tuben) kommen nicht aufs Dokument
   const allePos = positionen(b, { stundenZusammen: zusammen });
   const pos = allePos.filter((p) => p.preis != null);
-  const netto = pos.reduce((s, p) => s + (p.preis != null ? p.menge * p.preis : 0), 0);
-  const steuer = Math.round(netto * satz) / 100;
+  // Summen je Block (Material / Arbeit) und Nachlass in % je Block
+  const r2 = (n) => Math.round(n * 100) / 100;
+  const nachlass = { material: zahl(b.nachlassMaterial) || 0, arbeit: zahl(b.nachlassArbeit) || 0 };
+  const summe = {}, rabatt = {};
+  for (const k of Object.keys(preise.ARTEN)) {
+    summe[k] = r2(pos.filter((p) => p.art === k).reduce((a, p) => a + p.menge * p.preis, 0));
+    rabatt[k] = r2((summe[k] * nachlass[k]) / 100);
+  }
+  const waren = r2(Object.values(summe).reduce((a, x) => a + x, 0));
+  const rabatte = r2(Object.values(rabatt).reduce((a, x) => a + x, 0));
+  const netto = r2(waren - rabatte);
+  const steuer = r2((netto * satz) / 100);
+  const nachlassZeile = (k) => (rabatt[k] ? `<tr class="dok-nachlass"><td></td><td colspan="5">abzgl. ${fmt(nachlass[k])} % Nachlass auf ${preise.ARTEN[k]}</td><td class="r">-${z2(rabatt[k])}</td><td></td></tr>` : "");
   const nummer = b[`${art}Nr`] || String(nr(art));
   const dokDatum = b[`${art}Datum`] || heute();
   const text = b[`${art}Text`] ?? b.angebotText ?? "";
@@ -72,6 +83,8 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
           <label class="feld halb"><span>Datum</span><input name="datum" type="date" value="${esc(dokDatum)}"></label>
           <label class="feld"><span>Einleitung (erste Zeile, z.B. „Liefern und verlegen der Wand- und Bodenfliesen für das Bad“)</span><input name="text" value="${esc(text)}"></label>
           <label class="feld halb"><span>MwSt. %</span><input name="mwst" inputmode="decimal" value="${esc(fmt(satz))}"></label>
+          <label class="feld halb"><span>Nachlass Material %</span><input name="nachlassMaterial" inputmode="decimal" value="${esc(b.nachlassMaterial || "")}" placeholder="0"></label>
+          <label class="feld halb"><span>Nachlass Arbeit %</span><input name="nachlassArbeit" inputmode="decimal" value="${esc(b.nachlassArbeit || "")}" placeholder="0"></label>
           <label class="feld check halb"><input type="checkbox" name="zusammen" ${zusammen ? "checked" : ""}><span>Stunden zusammenfassen</span></label>
           <label class="feld check"><input type="checkbox" name="aufteilen" ${aufteilen ? "checked" : ""}><span>In Material und Arbeit aufteilen (mit Zwischensummen)</span></label>
         </div>
@@ -112,11 +125,14 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
           ${aufteilen ? Object.entries(preise.ARTEN).map(([k, titel]) => {
             const teil = pos.filter((p) => p.art === k);
             if (!teil.length) return "";
-            const summe = teil.reduce((a, p) => a + p.menge * p.preis, 0);
             return `<tr class="dok-block"><td></td><td colspan="7">${titel}</td></tr>
               ${teil.map(zeile).join("")}
-              <tr class="dok-zwischen"><td></td><td colspan="5">Zwischensumme ${titel}</td><td class="r">${z2(summe)}</td><td></td></tr>`;
-          }).join("") : pos.map(zeile).join("")}
+              <tr class="dok-zwischen"><td></td><td colspan="5">Zwischensumme ${titel}</td><td class="r">${z2(summe[k])}</td><td></td></tr>
+              ${rabatt[k] ? `${nachlassZeile(k)}<tr class="dok-zwischen"><td></td><td colspan="5">Summe ${titel}</td><td class="r">${z2(summe[k] - rabatt[k])}</td><td></td></tr>` : ""}`;
+          }).join("") : pos.map(zeile).join("") + (rabatte ? `
+            <tr class="dok-zwischen"><td></td><td colspan="5">Zwischensumme</td><td class="r">${z2(waren)}</td><td></td></tr>
+            ${Object.keys(preise.ARTEN).map(nachlassZeile).join("")}
+            <tr class="dok-zwischen"><td></td><td colspan="5">Summe nach Nachlass</td><td class="r">${z2(netto)}</td><td></td></tr>` : "")}
         </tbody>
       </table>
 
@@ -135,8 +151,8 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
         <div class="dok-details">
           <div class="dok-details-titel">Betrag Details</div>
           <div class="dok-raster sechs">
-            <div class="zelle"><small>Waren und Dienstleistungen</small><b class="r">${z2(netto)}</b></div>
-            <div class="zelle"><small>Rabatte</small><b class="r">0,00</b></div>
+            <div class="zelle"><small>Waren und Dienstleistungen</small><b class="r">${z2(waren)}</b></div>
+            <div class="zelle"><small>Rabatte</small><b class="r">${rabatte ? "-" : ""}${z2(rabatte)}</b></div>
             <div class="zelle"><small>Anzahlungen</small><b class="r">0,00</b></div>
             <div class="zelle"><small>Steuer gesamt</small><b class="r">${z2(steuer)}</b></div>
             <div class="zelle"><small>Nettobetrag</small><b class="r">${z2(netto)}</b></div>
@@ -154,6 +170,8 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   form.datum.onchange = () => feld({ [`${art}Datum`]: form.datum.value });
   form.text.onchange = () => feld({ [`${art}Text`]: form.text.value.trim() });
   form.mwst.onchange = () => feld({ mwst: form.mwst.value.trim() });
+  form.nachlassMaterial.onchange = () => feld({ nachlassMaterial: form.nachlassMaterial.value.trim() });
+  form.nachlassArbeit.onchange = () => feld({ nachlassArbeit: form.nachlassArbeit.value.trim() });
   form.aufteilen.onchange = async () => { await store.setMeta("aufteilen", form.aufteilen.checked); ansicht(kopf, inhalt, id, art); };
   form.zusammen.onchange = async () => { await store.setMeta("stundenZusammen", form.zusammen.checked); ansicht(kopf, inhalt, id, art); };
   form.onsubmit = (e) => e.preventDefault();
