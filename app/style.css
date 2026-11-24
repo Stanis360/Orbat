@@ -152,7 +152,8 @@ button.karte { cursor: pointer; }
 .mstatus.bestellt { background: color-mix(in srgb, var(--orange) 20%, transparent); color: var(--orange); }
 .mstatus.vorhanden { background: color-mix(in srgb, var(--gruen) 18%, transparent); color: var(--gruen); }
 .filter { flex-wrap: wrap; }
-h2 .klein-btn { min-height: 34px; padding: 0 12px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--text); }
+h2 .warnbox.klein { font-size: 13px; padding: 6px 10px; margin: 6px 0; }
+.klein-btn { min-height: 34px; padding: 0 12px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--text); }
 h2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .leer.klein { padding: 16px; font-size: 14px; }
 .aufschlag { font-size: 14px; color: var(--leise); margin: 0 4px 10px; }
@@ -329,7 +330,7 @@ body.vollbild { overflow: hidden; overscroll-behavior: none; }
 .dok-titel small { display: block; font-size: 11px; font-weight: 400; margin-top: 2px; }
 .superbill { margin: 10px 0; background: color-mix(in srgb, var(--blau) 8%, var(--karte)); }
 .sb-zeile { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; }
-.sb-text { flex: 1; background: var(--karte); border: 1px solid var(--linie); border-radius: 8px; padding: 8px 10px; font-size: 14px; user-select: all; }
+.sb-text { flex: 1; font: inherit; color: var(--text); resize: vertical; background: var(--karte); border: 1px solid var(--linie); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
 .sb-betraege { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-bottom: 6px; font-size: 14px; }
 .klein-btn { min-height: 34px; padding: 0 12px; font-size: 13px; }
 .dok-fusstext { margin: 10px 0 0; font-size: 11px; }

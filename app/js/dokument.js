@@ -42,9 +42,14 @@ export function positionen(b, { stundenZusammen }) {
 }
 
 // Satz für die Rechnung in SuperBill, mit Platzhaltern aus den Firmendaten
-export function satzFuerRechnung(f, b, nummer, datumText, einleitung) {
-  const werte = { zielort: b.adresse || b.name, baustelle: b.name, kunde: b.kunde || "", nummer, datum: datumText, einleitung: einleitung || "" };
-  return (f.satzVorlage || STANDARD_SATZ).replace(/\{(\w+)\}/g, (m, k) => (k in werte ? werte[k] : m)).replace(/\s+/g, " ").trim();
+// Ist für die Baustelle ein eigener Satz gespeichert, wird der genommen.
+export function satzFuerRechnung(f, b, nummer, datumText, einleitung, nurVorlage = false) {
+  const werte = {
+    zielort: b.adresse || b.name, baustelle: b.name, kunde: b.kunde || "", nummer, datum: datumText, einleitung: einleitung || "",
+    baugenehmigung: b.baugenehmigung || "", bauparzelle: b.bauparzelle || "",
+  };
+  const vorlage = (!nurVorlage && b.satzRechnung) || f.satzVorlage || STANDARD_SATZ;
+  return vorlage.replace(/\{(\w+)\}/g, (m, k) => (k in werte ? werte[k] : m)).replace(/\s+/g, " ").trim();
 }
 
 // ---------- Ansicht ----------
@@ -79,6 +84,10 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const text = b[`${sk}Text`] ?? b.angebotText ?? "";
   const datumText = new Date(dokDatum + "T12:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
   const istAufstellung = art === "aufstellung";
+  // Platzhalter in der Satz-Vorlage, für die auf der Baustelle noch nichts eingetragen ist
+  const vorlageTxt = b.satzRechnung || f.satzVorlage || STANDARD_SATZ;
+  const fehlt = [["baugenehmigung", "Baugenehmigung"], ["bauparzelle", "Bauparzelle"], ["kunde", "Kunde"]]
+    .filter(([k]) => vorlageTxt.includes(`{${k}}`) && !b[k]).map(([, l]) => l);
   const ohnePreis = allePos.filter((p) => p.preis == null);
   const empfaenger = (b.rechnungsadresse || [b.kunde, b.adresse].filter(Boolean).join("\n")).split("\n").map((z) => z.trim()).filter(Boolean);
   const firmaFehlt = !f.name;
@@ -103,16 +112,18 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
       </form>
       ${art !== "angebot" ? `<div class="karte superbill">
         <b>Für SuperBill</b> <small class="leise">– Text und Beträge für die elektronische Rechnung</small>
-        <div class="sb-zeile"><span class="sb-text" id="sb-satz">${esc(satzFuerRechnung(f, b, nummer, datumText, text))}</span><button class="btn klein-btn" data-kopie="sb-satz">Kopieren</button></div>
+        ${fehlt.length ? `<p class="warnbox klein">Für den Satz fehlt noch: ${fehlt.join(", ")}. <a class="link" href="#" id="sb-daten">Jetzt eintragen</a></p>` : ""}
+        <div class="sb-zeile"><textarea class="sb-text" id="sb-satz" rows="3">${esc(satzFuerRechnung(f, b, nummer, datumText, text))}</textarea><button class="btn klein-btn" data-kopie="sb-satz">Kopieren</button></div>
+        ${b.satzRechnung ? `<p class="leise klein">Eigener Satz für diese Baustelle. <a class="link" href="#" id="sb-vorlage">Wieder die Vorlage einsetzen</a></p>` : ""}
         <div class="sb-betraege">
           <span>Netto <b id="sb-netto">${z2(netto)}</b> <button class="btn klein-btn" data-kopie="sb-netto">Kopieren</button></span>
           <span>MwSt. ${fmt(satz)} % <b>${z2(steuer)}</b></span>
           <span>Gesamt <b>${z2(netto + steuer)}</b></span>
         </div>
-        <small class="leise">Den Satz änderst du unter ⚙ Einstellungen → Firmendaten → „Satz für die Rechnung“.</small>
+        <small class="leise">Änderungen hier gelten nur für diese Baustelle. Die Vorlage für alle änderst du unter ⚙ Einstellungen → Firmendaten.</small>
       </div>` : ""}
       <div class="knopfreihe"><button class="btn primaer" id="drucken">🖨 Drucken / als PDF speichern</button>
-        <button class="btn" id="kunde">✎ Empfänger / Kundendaten</button></div>
+        <button class="btn" id="kunde">✎ Kundendaten &amp; Baustelle</button></div>
     </div>
 
     <article class="dok">
@@ -198,9 +209,17 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   form.zusammen.onchange = async () => { await store.setMeta("stundenZusammen", form.zusammen.checked); ansicht(kopf, inhalt, id, art); };
   form.onsubmit = (e) => e.preventDefault();
   inhalt.querySelectorAll("[data-kopie]").forEach((k) => (k.onclick = async () => {
-    const t = $("#" + k.dataset.kopie).textContent;
+    const el = $("#" + k.dataset.kopie);
+    const t = el.value ?? el.textContent;
     try { await navigator.clipboard.writeText(t); k.textContent = "✓ Kopiert"; } catch { prompt("Zum Kopieren:", t); }
   }));
+  $("#sb-satz")?.addEventListener("change", (e) => {
+    // Nur speichern, wenn wirklich vom Vorlagen-Satz abweichend
+    const v = e.target.value.trim();
+    feld({ satzRechnung: v === satzFuerRechnung(f, store.get(id), nummer, datumText, text, true) ? "" : v });
+  });
+  $("#sb-vorlage")?.addEventListener("click", (e) => { e.preventDefault(); feld({ satzRechnung: "" }); });
+  $("#sb-daten")?.addEventListener("click", (e) => { e.preventDefault(); $("#kunde").click(); });
   $("#kunde").onclick = () => kundeBearbeiten(store.get(id)).then(() => ansicht(kopf, inhalt, id, art));
   $("#drucken").onclick = async () => {
     // Nummer und Datum beim ersten Drucken festhalten und den Zähler weiterzählen
@@ -219,7 +238,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
 
 export async function kundeBearbeiten(b) {
   const erg = await formular({
-    titel: "Empfänger / Kundendaten",
+    titel: "Kundendaten & Baustelle",
     werte: { ...b, rechnungsadresse: b.rechnungsadresse || [b.kunde, b.adresse].filter(Boolean).join("\n") },
     felder: [
       { n: "rechnungsadresse", l: "Empfänger (Name, Straße, PLZ Ort – je eine Zeile)", typ: "textarea" },
@@ -227,6 +246,8 @@ export async function kundeBearbeiten(b) {
       { n: "kundeUstId", l: "USt.-ID Kunde", halb: true },
       { n: "kundeSteuernr", l: "Steuernummer Kunde", halb: true },
       { n: "adresse", l: "Zielort / Adresse Baustelle", halb: true },
+      { n: "baugenehmigung", l: "Baugenehmigung (Nr. / Datum)", halb: true, platzhalter: "z.B. Nr. 45/2026 vom 12.03.2026" },
+      { n: "bauparzelle", l: "Bauparzelle / K.G.", halb: true, platzhalter: "z.B. Bp. 123, K.G. Gais" },
     ],
   });
   if (erg) await store.speichern({ ...store.get(b.id), ...erg });
@@ -251,7 +272,7 @@ export function firmaFormular() {
         <label class="feld halb"><span>MwSt. % (Standard)</span><input name="mwst" inputmode="decimal" value="${esc(f.mwst ?? store.getMeta("mwst", "20"))}"></label>
         <label class="feld halb"><span>Nächste Angebots-Nr.</span><input name="nr_angebot" inputmode="numeric" value="${esc(String(nr("angebot")))}"></label>
         <label class="feld halb"><span>Nächste Rechnungs-Nr.</span><input name="nr_rechnung" inputmode="numeric" value="${esc(String(nr("rechnung")))}"></label>
-        <label class="feld"><span>Satz für die Rechnung (SuperBill) – Platzhalter: {zielort} {kunde} {baustelle} {nummer} {datum} {einleitung}</span><textarea name="satzVorlage" rows="3" placeholder="${esc(STANDARD_SATZ)}">${esc(f.satzVorlage || "")}</textarea></label>
+        <label class="feld"><span>Satz für die Rechnung (SuperBill) – Platzhalter: {baugenehmigung} {bauparzelle} {zielort} {kunde} {baustelle} {nummer} {datum} {einleitung}</span><textarea name="satzVorlage" rows="3" placeholder="${esc(STANDARD_SATZ)}">${esc(f.satzVorlage || "")}</textarea></label>
         <label class="feld"><span>Fußtext (optional, z.B. Gültigkeit, Zahlungsziel)</span><input name="fusstext" value="${esc(f.fusstext || "")}"></label>
       </div>
       <div class="knopfreihe"><button class="btn primaer" type="submit">Firmendaten speichern</button></div>
