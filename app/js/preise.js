@@ -51,7 +51,7 @@ export function summen(bId) {
 }
 
 // ---------- Stammdaten ----------
-export const artikel = () => store.liste("artikel").sort((a, b) => (a.kategorie || "").localeCompare(b.kategorie || "", "de") || a.name.localeCompare(b.name, "de"));
+export const artikel = () => store.liste("artikel").sort((a, b) => (a.kategorie || "").localeCompare(b.kategorie || "", "de") || a.name.localeCompare(b.name, "de", { numeric: true }));
 export const saetze = () => store.liste("satz").sort((a, b) => (b.standard ? 1 : 0) - (a.standard ? 1 : 0) || a.name.localeCompare(b.name, "de"));
 const artikelNachName = (name) => store.liste("artikel", (a) => a.name.trim().toLowerCase() === String(name || "").trim().toLowerCase())[0] || null;
 
@@ -454,6 +454,8 @@ function listeEinfuegen() {
       Steht in der Kategorie „Arbeit“ (oder z.B. „Verlegen“, „Montage“), kommt der Eintrag im Angebot unter <b>Arbeit</b>, sonst unter <b>Material</b>.
       Ein <b>„-“ als Kundenpreis</b> heißt: wird nicht verrechnet (z.B. Silikon-Tuben, wenn der Kunde pro lm zahlt) – kommt dann nicht aufs Angebot.</p>
       <textarea name="text" rows="9" placeholder="Fliesenkleber flexibel; Sack; 12,90; 18,50; Fliesen; Baumarkt&#10;Silikon Tube sanitär weiß; Stk; 6,20; -; Material&#10;Silikon verfugen; lm; ; 4,30; Fliesen"></textarea>
+      <label class="feld"><span>Die eingefügten Einträge kommen im Angebot unter</span><select name="art">
+        <option value="">automatisch (nach Kategorie)</option><option value="material">Material</option><option value="arbeit">Arbeit</option></select></label>
       <label class="feld check"><input type="checkbox" name="auto" checked><span>Fehlenden Kundenpreis aus Einkauf + ${esc(store.getMeta("aufschlag", "20"))} % berechnen</span></label>
       <p class="dlg-info" data-info>Noch nichts eingefügt.</p>
       <div class="dlg-knoepfe"><span class="platz"></span>
@@ -478,6 +480,7 @@ function listeEinfuegen() {
     for (const eintrag of gelesen) {
       const { nichtVerrechnen, ...neu } = eintrag;
       if (form.auto.checked && !nichtVerrechnen && !neu.vk && neu.ek) neu.vk = vkAusEk(zahl(neu.ek));
+      if (form.art.value) neu.art = form.art.value;
       const alt = artikelNachName(neu.name);
       await store.speichern({ ...(alt || { typ: "artikel", einheit: "Stk" }), ...neu });
     }
