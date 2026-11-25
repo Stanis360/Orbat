@@ -35,3 +35,95 @@ Dichtung Aluschiene 50 m; Rolle; 89,68; 152,00; Terrassenzubehör; ; 000189893; 
 Verbindungsstück Aluschiene; Stk; 0,38; 0,65; Terrassenzubehör; ; 000183893; Material
 Wandabstandhalter Edelstahl; Stk; 1,83; 3,10; Terrassenzubehör; ; 000117893; Material
 Wandabstandhalter Polypropylen; Stk; 0,62; 1,05; Terrassenzubehör; ; 000153893; Material
+
+# Profile (Profilpas)
+L-Profil Alu 8 mm (270 cm); Stk; 7,44; 12,40; Profile; ; 000265894; Material
+L-Profil Alu 10 mm (270 cm); Stk; 7,80; 13,00; Profile; ; 000135894; Material
+L-Profil Alu 11 mm (270 cm); Stk; 8,43; 14,05; Profile; ; 000136894; Material
+L-Profil Edelstahl 10 mm (270 cm); Stk; 18,51; 30,85; Profile; ; 000345894; Material
+L-Profil Edelstahl 11 mm (270 cm); Stk; 18,93; 31,55; Profile; ; 000131894; Material
+Gefällekeil mit Glaseinsatz rechts 37 mm (120 cm); Stk; 67,14; 111,90; Profile; ; 000378894; Material
+Gefällekeil mit Glaseinsatz links 37 mm (120 cm); Stk; 67,14; 111,90; Profile; ; 000329894; Material
+Gefällekeil mit Glaseinsatz rechts 42 mm (148 cm); Stk; 75,54; 125,90; Profile; ; 000417894; Material
+Gefällekeil mit Glaseinsatz links 42 mm (148 cm); Stk; 75,54; 125,90; Profile; ; 000379894; Material
+Gefällekeil ohne Glaseinsatz rechts 25 mm (98 cm); Stk; 33,00; 55,00; Profile; ; 000536894; Material
+Gefällekeil ohne Glaseinsatz links 25 mm (98 cm); Stk; 33,00; 55,00; Profile; ; 000565894; Material
+Gefällekeil ohne Glaseinsatz rechts 28 mm (120 cm); Stk; 35,16; 58,60; Profile; ; 000472894; Material
+Gefällekeil ohne Glaseinsatz links 28 mm (120 cm); Stk; 35,16; 58,60; Profile; ; 000474894; Material
+Glaseinsatz Wand Edelstahl 10 mm (210 cm); Stk; 59,67; 99,45; Profile; ; 000524894; Material
+Glaseinsatz Wand Alu 10 mm (270 cm); Stk; 14,91; 24,85; Profile; ; 000475894; Material
+# Sopro – Kleber
+Montagekleber Sopro MTX weiß 0,42 kg; Stk; 7,95; 14,20; Kleber; ; 000237848; Material
+Flexkleber Sopro No. 1 400 grau 15 kg; Sack; 17,30; 30,90; Kleber; ; 000111848; Material
+Flexkleber Sopro No. 1 403 silver 25 kg; Sack; 44,91; 80,20; Kleber; ; 000101848; Material
+Flexkleber Sopro FF 450 grau 20 kg; Sack; 15,23; 27,20; Kleber; ; 000102848; Material
+Flexkleber Sopro SFF 776 weiß 20 kg; Sack; 18,26; 32,60; Kleber; ; 000173848; Material
+# Sopro – Abdichtung
+Dichtschlämme Sopro DSF RS grau 20 kg; Sack; 89,01; 158,95; Abdichtung; ; 000109848; Material
+Dicht- und Montagekleber Sopro RMK 818 weiß 310 ml; Stk; 13,33; 23,80; Abdichtung; ; 000105848; Material
+Dichtband Sopro AEB 148 (12 cm); lfm; 2,00; 3,58; Abdichtung; ; 000170848; Material
+Dichtband Sopro DBF 638 (12 cm) Rolle 50 m; Rolle; 65,07; 116,20; Abdichtung; ; 000248848; Material
+Dichtecke Sopro AEB 642 innen; Stk; 2,60; 4,65; Abdichtung; ; 000171848; Material
+Dichtecke Sopro AEB 643 außen; Stk; 2,60; 4,65; Abdichtung; ; 000172848; Material
+Dichtecke Sopro DE 014 innen; Stk; 5,07; 9,05; Abdichtung; ; 000249848; Material
+Dichtecke Sopro DE 015 außen; Stk; 6,50; 11,60; Abdichtung; ; 000250848; Material
+Abdichtbahn Sopro AEB 815 (1 m breit); lfm; 5,04; 9,00; Abdichtung; ; 000110848; Material
+# Sopro – Fugenmörtel DF 10 (5 kg Eimer)
+Fugenmörtel Sopro DF 10 weiß 10 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000112848; Material
+Fugenmörtel Sopro DF 10 hellgrau 16 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000113848; Material
+Fugenmörtel Sopro DF 10 silbergrau 17 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000114848; Material
+Fugenmörtel Sopro DF 10 grau 15 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000115848; Material
+Fugenmörtel Sopro DF 10 betongrau 14 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000116848; Material
+Fugenmörtel Sopro DF 10 sandgrau 18 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000117848; Material
+Fugenmörtel Sopro DF 10 lichtgrau 23 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000118848; Material
+Fugenmörtel Sopro DF 10 jasmin 28 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000119848; Material
+Fugenmörtel Sopro DF 10 beige 32 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000120848; Material
+Fugenmörtel Sopro DF 10 pergamo 27 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000121848; Material
+Fugenmörtel Sopro DF 10 balibraun 59 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000122848; Material
+Fugenmörtel Sopro DF 10 anthrazit 66 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000123848; Material
+Fugenmörtel Sopro DF 10 schwarz 90 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000124848; Material
+Fugenmörtel Sopro DF 10 steingrau 22 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000125848; Material
+Fugenmörtel Sopro DF 10 hellbeige 29 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000126848; Material
+Fugenmörtel Sopro DF 10 jurabeige 33 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000127848; Material
+Fugenmörtel Sopro DF 10 bahamabeige 34 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000128848; Material
+Fugenmörtel Sopro DF 10 braun 52 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000129848; Material
+Fugenmörtel Sopro DF 10 kastanie 50 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000130848; Material
+Fugenmörtel Sopro DF 10 caramel 38 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000131848; Material
+Fugenmörtel Sopro DF 10 manhattan 77 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000132848; Material
+Fugenmörtel Sopro DF 10 basalt 64 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000133848; Material
+Fugenmörtel Sopro DF 10 sahara 40 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000134848; Material
+Fugenmörtel Sopro DF 10 mahagoni 55 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000135848; Material
+Fugenmörtel Sopro DF 10 ebenholz 62 5 kg; Eimer; 25,34; 45,25; Fugen & Silikon; ; 000136848; Material
+# Sopro – Keramiksilikon KSI (310 ml)
+Silikon Sopro KSI sahara 40 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000140848; Material
+Silikon Sopro KSI mahagoni 55 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000141848; Material
+Silikon Sopro KSI basalt 64 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000142848; Material
+Silikon Sopro KSI ebenholz 62 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000143848; Material
+Silikon Sopro KSI anthrazit 66 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000144848; Material
+Silikon Sopro KSI bahamabeige 34 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000145848; Material
+Silikon Sopro KSI manhattan 77 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000146848; Material
+Silikon Sopro KSI weiß 10 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000147848; Material
+Silikon Sopro KSI grau 15 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000148848; Material
+Silikon Sopro KSI silbergrau 17 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000149848; Material
+Silikon Sopro KSI hellgrau 16 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000150848; Material
+Silikon Sopro KSI lichtgrau 23 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000151848; Material
+Silikon Sopro KSI betongrau 14 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000152848; Material
+Silikon Sopro KSI beige 32 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000153848; Material
+Silikon Sopro KSI jasmin 28 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000154848; Material
+Silikon Sopro KSI hellbeige 29 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000155848; Material
+Silikon Sopro KSI pergamon 27 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000156848; Material
+Silikon Sopro KSI steingrau 22 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000157848; Material
+Silikon Sopro KSI jurabeige 33 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000158848; Material
+Silikon Sopro KSI braun 52 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000159848; Material
+Silikon Sopro KSI kastanie 50 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000160848; Material
+Silikon Sopro KSI balibraun 59 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000161848; Material
+Silikon Sopro KSI schwarz 90 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000162848; Material
+Silikon Sopro KSI sandgrau 18 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000163848; Material
+Silikon Sopro KSI transparent 00 310 ml; Stk; 7,22; 12,90; Fugen & Silikon; ; 000231848; Material
+Silikon Sopro KSI hellgrau 16 310 ml (6HX5601644); Stk; 7,70; 13,75; Fugen & Silikon; ; 000278848; Material
+# Sopro – Estrich, Grundierung, Spachtel
+Schnellestrich Sopro Rapidur M5 SEM 747 25 kg; Sack; 8,01; 14,30; Estrich & Spachtel; ; 000100850; Material
+Grundierung Sopro GD 749 5 kg; Kanister; 18,84; 33,65; Estrich & Spachtel; ; 000107848; Material
+Fließspachtel Sopro S-Flow Speed 25 kg; Sack; 27,44; 49,00; Estrich & Spachtel; ; 000182848; Material
+Spachtelmasse Sopro VS 582 20 kg; Sack; 19,18; 34,25; Estrich & Spachtel; ; 000103848; Material
+Renovier- und Ausgleichmörtel Sopro RAM 3 25 kg; Sack; 26,52; 47,35; Estrich & Spachtel; ; 000104848; Material
