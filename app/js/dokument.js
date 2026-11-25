@@ -155,7 +155,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
         <div class="zelle"><small>${istAufstellung ? "Zu Rechnung Nr." : "Nummer"}</small><b>${esc(nummer)}</b></div>
       </div>
       <div class="dok-raster zwei">
-        <div class="zelle hoch"><small>Zielort</small><b>${esc(b.adresse || b.name)}</b></div>
+        <div class="zelle hoch"><small>Zielort</small><b>${eigeneAdresse ? esc(b.adresse || "") : ""}&nbsp;</b></div>
         <div class="zelle hoch"><small>Empfänger</small><b>${empfaenger.map(esc).join("<br>") || "&nbsp;"}</b></div>
       </div>
       <div class="dok-raster vier">
