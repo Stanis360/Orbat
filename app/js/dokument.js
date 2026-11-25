@@ -7,7 +7,7 @@ import { $, esc, zahl, fmt, datum, heute, formular } from "./ui.js";
 export const ARTEN = { angebot: "Angebot", rechnung: "Rechnung", aufstellung: "Aufstellung" };
 // Die Aufstellung ist die Anlage zur Rechnung: gleiche Nummer, gleiches Datum
 const schluesselVon = (art) => (art === "aufstellung" ? "rechnung" : art);
-const STANDARD_SATZ = "Ausgeführte Arbeiten laut beiliegender Aufstellung – Baustelle {zielort}";
+const STANDARD_SATZ = "Ausgeführte Arbeiten laut beiliegender Aufstellung – Baustelle {adresse}";
 const FIRMA_ID = "firma";
 
 export const firma = () => store.get(FIRMA_ID) || {};
@@ -53,7 +53,7 @@ export function positionen(b, { stundenZusammen }) {
 // Ist für die Baustelle ein eigener Satz gespeichert, wird der genommen.
 export function satzFuerRechnung(f, b, nummer, datumText, einleitung, nurVorlage = false) {
   const werte = {
-    zielort: b.adresse || b.name, baustelle: b.name, kunde: b.kunde || "", nummer, datum: datumText, einleitung: einleitung || "",
+    adresse: b.adresse || b.name, zielort: b.adresse || b.name, baustelle: b.name, kunde: b.kunde || "", nummer, datum: datumText, einleitung: einleitung || "",
     baugenehmigung: b.baugenehmigung || "", bauparzelle: b.bauparzelle || "",
   };
   const vorlage = (!nurVorlage && b.satzRechnung) || f.satzVorlage || STANDARD_SATZ;
@@ -97,12 +97,8 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const fehlt = [["baugenehmigung", "Baugenehmigung"], ["bauparzelle", "Bauparzelle"], ["kunde", "Kunde"]]
     .filter(([k]) => vorlageTxt.includes(`{${k}}`) && !b[k]).map(([, l]) => l);
   const ohnePreis = allePos.filter((p) => p.preis == null);
-  // Eigene Rechnungsadresse nur, wenn sie wirklich abweicht (alte Einträge wiederholten oft nur die Adresse)
-  const ra = (b.rechnungsadresse || "").trim();
-  const eigeneAdresse = ra && ra !== standardEmpfaenger(b) && ra !== (b.adresse || "").trim();
-  const empfaenger = (eigeneAdresse ? ra : standardEmpfaenger(b)).split("\n").map((z) => z.trim()).filter(Boolean);
   const firmaFehlt = !f.name;
-  const kundeFehlt = !b.kunde && !(eigeneAdresse && ra.includes("\n"));
+  const kundeFehlt = !b.kunde;
 
   const zeile = (p) => `<tr><td>${esc(p.code || "")}</td><td>${esc(p.text)}</td><td>${esc(p.me)}</td><td class="r">${z2(p.menge)}</td><td class="r">${z2(p.preis)}</td><td></td><td class="r">${z2(p.menge * p.preis)}</td><td class="r">${fmt(satz)}</td></tr>`;
   inhalt.innerHTML = `
@@ -155,8 +151,8 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
         <div class="zelle"><small>${istAufstellung ? "Zu Rechnung Nr." : "Nummer"}</small><b>${esc(nummer)}</b></div>
       </div>
       <div class="dok-raster zwei">
-        <div class="zelle hoch"><small>Zielort</small><b>${eigeneAdresse ? esc(b.adresse || "") : ""}&nbsp;</b></div>
-        <div class="zelle hoch"><small>Empfänger</small><b>${empfaenger.map(esc).join("<br>") || "&nbsp;"}</b></div>
+        <div class="zelle hoch"><small>Adresse</small><b>${esc(b.adresse || "")}&nbsp;</b></div>
+        <div class="zelle hoch"><small>Empfänger</small><b>${esc(b.kunde || "")}&nbsp;</b></div>
       </div>
       <div class="dok-raster vier">
         <div class="zelle"><small>Kundennr.</small><b>${esc(b.kundennr || "")}&nbsp;</b></div>
@@ -252,16 +248,13 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   };
 }
 
-const standardEmpfaenger = (b) => [b.kunde, b.adresse].filter(Boolean).join("\n");
-
 export async function kundeBearbeiten(b) {
   const erg = await formular({
     titel: "Kundendaten & Baustelle",
-    werte: { ...b, rechnungsadresse: b.rechnungsadresse || "" },
+    werte: b,
     felder: [
       { n: "kunde", l: "Kunde (Name)", pflicht: true, liste: [...new Set(store.liste("baustelle").map((x) => x.kunde).filter(Boolean))] },
-      { n: "adresse", l: "Adresse Baustelle / Kunde" },
-      { n: "rechnungsadresse", l: "Andere Rechnungsadresse (nur falls abweichend – Name, Straße, PLZ Ort je eine Zeile)", typ: "textarea" },
+      { n: "adresse", l: "Adresse" },
       { n: "kundennr", l: "Kundennummer", halb: true },
       { n: "kundeUstId", l: "USt.-ID Kunde", halb: true },
       { n: "kundeSteuernr", l: "Steuernummer Kunde", halb: true },
@@ -270,8 +263,6 @@ export async function kundeBearbeiten(b) {
     ],
   });
   if (!erg) return;
-  // Eine Rechnungsadresse, die nur Kunde + Adresse wiederholt, nicht fest speichern
-  if (erg.rechnungsadresse.trim() === standardEmpfaenger(erg)) erg.rechnungsadresse = "";
   await store.speichern({ ...store.get(b.id), ...erg });
 }
 
@@ -295,7 +286,7 @@ export function firmaFormular() {
         <label class="feld halb"><span>MwSt. % (Standard)</span><input name="mwst" inputmode="decimal" value="${esc(f.mwst ?? store.getMeta("mwst", "20"))}"></label>
         <label class="feld halb"><span>Nächste Angebots-Nr.</span><input name="nr_angebot" inputmode="numeric" value="${esc(String(nr("angebot")))}"></label>
         <label class="feld halb"><span>Nächste Rechnungs-Nr.</span><input name="nr_rechnung" inputmode="numeric" value="${esc(String(nr("rechnung")))}"></label>
-        <label class="feld"><span>Satz für die Rechnung (SuperBill) – Platzhalter: {baugenehmigung} {bauparzelle} {zielort} {kunde} {baustelle} {nummer} {datum} {einleitung}</span><textarea name="satzVorlage" rows="3" placeholder="${esc(STANDARD_SATZ)}">${esc(f.satzVorlage || "")}</textarea></label>
+        <label class="feld"><span>Satz für die Rechnung (SuperBill) – Platzhalter: {baugenehmigung} {bauparzelle} {adresse} {kunde} {baustelle} {nummer} {datum} {einleitung}</span><textarea name="satzVorlage" rows="3" placeholder="${esc(STANDARD_SATZ)}">${esc(f.satzVorlage || "")}</textarea></label>
         <label class="feld"><span>Fußtext (optional, z.B. Gültigkeit, Zahlungsziel)</span><input name="fusstext" value="${esc(f.fusstext || "")}"></label>
       </div>
       <div class="knopfreihe"><button class="btn primaer" type="submit">Firmendaten speichern</button></div>
