@@ -97,14 +97,19 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const fehlt = [["baugenehmigung", "Baugenehmigung"], ["bauparzelle", "Bauparzelle"], ["kunde", "Kunde"]]
     .filter(([k]) => vorlageTxt.includes(`{${k}}`) && !b[k]).map(([, l]) => l);
   const ohnePreis = allePos.filter((p) => p.preis == null);
-  const empfaenger = (b.rechnungsadresse || [b.kunde, b.adresse].filter(Boolean).join("\n")).split("\n").map((z) => z.trim()).filter(Boolean);
+  // Eigene Rechnungsadresse nur, wenn sie wirklich abweicht (alte Einträge wiederholten oft nur die Adresse)
+  const ra = (b.rechnungsadresse || "").trim();
+  const eigeneAdresse = ra && ra !== standardEmpfaenger(b) && ra !== (b.adresse || "").trim();
+  const empfaenger = (eigeneAdresse ? ra : standardEmpfaenger(b)).split("\n").map((z) => z.trim()).filter(Boolean);
   const firmaFehlt = !f.name;
+  const kundeFehlt = !b.kunde && !(eigeneAdresse && ra.includes("\n"));
 
   const zeile = (p) => `<tr><td>${esc(p.code || "")}</td><td>${esc(p.text)}</td><td>${esc(p.me)}</td><td class="r">${z2(p.menge)}</td><td class="r">${z2(p.preis)}</td><td></td><td class="r">${z2(p.menge * p.preis)}</td><td class="r">${fmt(satz)}</td></tr>`;
   inhalt.innerHTML = `
     <div class="nicht-drucken dok-steuerung">
       <div class="filter">${Object.entries(ARTEN).map(([k, l]) => `<a class="chip ${k === art ? "aktiv" : ""}" href="#/dok/${id}/${k}">${l}</a>`).join("")}</div>
       ${firmaFehlt ? `<p class="warnbox">Deine Firmendaten fehlen noch (Name, Adresse, Steuernummer, Bank). <a class="link" href="#/einstellungen">Jetzt unter ⚙ Einstellungen eintragen</a></p>` : ""}
+      ${kundeFehlt ? `<p class="warnbox">Beim Empfänger fehlt der Name des Kunden. <a class="link" href="#" id="kunde-fehlt">Jetzt eintragen</a></p>` : ""}
       ${ohnePreis.length ? `<p class="hinweisbox">Nicht aufgeführt, weil ohne Kundenpreis: ${ohnePreis.map((p) => esc(p.text)).join(", ")}. Falls das verrechnet werden soll, bitte den Kundenpreis nachtragen.</p>` : ""}
       <form class="karte form" id="dok-form">
         <div class="felder">
@@ -230,6 +235,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   });
   $("#sb-vorlage")?.addEventListener("click", (e) => { e.preventDefault(); feld({ satzRechnung: "" }); });
   $("#sb-daten")?.addEventListener("click", (e) => { e.preventDefault(); $("#kunde").click(); });
+  $("#kunde-fehlt")?.addEventListener("click", (e) => { e.preventDefault(); $("#kunde").click(); });
   $("#kunde").onclick = () => kundeBearbeiten(store.get(id)).then(() => ansicht(kopf, inhalt, id, art));
   $("#drucken").onclick = async () => {
     // Nummer und Datum beim ersten Drucken festhalten und den Zähler weiterzählen
@@ -246,21 +252,27 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   };
 }
 
+const standardEmpfaenger = (b) => [b.kunde, b.adresse].filter(Boolean).join("\n");
+
 export async function kundeBearbeiten(b) {
   const erg = await formular({
     titel: "Kundendaten & Baustelle",
-    werte: { ...b, rechnungsadresse: b.rechnungsadresse || [b.kunde, b.adresse].filter(Boolean).join("\n") },
+    werte: { ...b, rechnungsadresse: b.rechnungsadresse || "" },
     felder: [
-      { n: "rechnungsadresse", l: "Empfänger (Name, Straße, PLZ Ort – je eine Zeile)", typ: "textarea" },
+      { n: "kunde", l: "Kunde (Name)", pflicht: true, liste: [...new Set(store.liste("baustelle").map((x) => x.kunde).filter(Boolean))] },
+      { n: "adresse", l: "Adresse Baustelle / Kunde" },
+      { n: "rechnungsadresse", l: "Andere Rechnungsadresse (nur falls abweichend – Name, Straße, PLZ Ort je eine Zeile)", typ: "textarea" },
       { n: "kundennr", l: "Kundennummer", halb: true },
       { n: "kundeUstId", l: "USt.-ID Kunde", halb: true },
       { n: "kundeSteuernr", l: "Steuernummer Kunde", halb: true },
-      { n: "adresse", l: "Zielort / Adresse Baustelle", halb: true },
       { n: "baugenehmigung", l: "Baugenehmigung (Nr. / Datum)", halb: true, platzhalter: "z.B. Nr. 45/2026 vom 12.03.2026" },
       { n: "bauparzelle", l: "Bauparzelle / K.G.", halb: true, platzhalter: "z.B. Bp. 123, K.G. Gais" },
     ],
   });
-  if (erg) await store.speichern({ ...store.get(b.id), ...erg });
+  if (!erg) return;
+  // Eine Rechnungsadresse, die nur Kunde + Adresse wiederholt, nicht fest speichern
+  if (erg.rechnungsadresse.trim() === standardEmpfaenger(erg)) erg.rechnungsadresse = "";
+  await store.speichern({ ...store.get(b.id), ...erg });
 }
 
 // ---------- Firmendaten (Einstellungen) ----------
