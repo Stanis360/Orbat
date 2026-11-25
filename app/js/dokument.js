@@ -85,7 +85,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const rabatte = r2(Object.values(rabatt).reduce((a, x) => a + x, 0));
   const netto = r2(waren - rabatte);
   const steuer = r2((netto * satz) / 100);
-  const nachlassZeile = (k) => (rabatt[k] ? `<tr class="dok-nachlass"><td></td><td colspan="5">abzgl. ${fmt(nachlass[k])} % Nachlass auf ${preise.ARTEN[k]}</td><td class="r">-${z2(rabatt[k])}</td><td></td></tr>` : "");
+  const nachlassZeile = (k) => (rabatt[k] ? `<tr class="dok-nachlass"><td colspan="5">abzgl. ${fmt(nachlass[k])} % Nachlass auf ${preise.ARTEN[k]}</td><td class="r">-${z2(rabatt[k])}</td><td></td></tr>` : "");
   const sk = schluesselVon(art);
   const nummer = b[`${sk}Nr`] || String(nr(sk));
   const dokDatum = b[`${sk}Datum`] || heute();
@@ -100,7 +100,7 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
   const firmaFehlt = !f.name;
   const kundeFehlt = !b.kunde;
 
-  const zeile = (p) => `<tr><td>${esc(p.code || "")}</td><td>${esc(p.text)}</td><td>${esc(p.me)}</td><td class="r">${z2(p.menge)}</td><td class="r">${z2(p.preis)}</td><td></td><td class="r">${z2(p.menge * p.preis)}</td><td class="r">${fmt(satz)}</td></tr>`;
+  const zeile = (p) => `<tr><td>${esc(p.text)}</td><td>${esc(p.me)}</td><td class="r">${z2(p.menge)}</td><td class="r">${z2(p.preis)}</td><td></td><td class="r">${z2(p.menge * p.preis)}</td><td class="r">${fmt(satz)}</td></tr>`;
   inhalt.innerHTML = `
     <div class="nicht-drucken dok-steuerung">
       <div class="filter">${Object.entries(ARTEN).map(([k, l]) => `<a class="chip ${k === art ? "aktiv" : ""}" href="#/dok/${id}/${k}">${l}</a>`).join("")}</div>
@@ -162,20 +162,20 @@ export function ansicht(kopf, inhalt, id, art = "angebot") {
       </div>
 
       <table class="dok-pos">
-        <thead><tr><th>Code</th><th>Beschreibung</th><th>ME</th><th class="r">Menge</th><th class="r">Einzelpreis</th><th class="r">Rabatt</th><th class="r">Betrag</th><th class="r">USt.</th></tr></thead>
+        <thead><tr><th>Beschreibung</th><th>ME</th><th class="r">Menge</th><th class="r">Einzelpreis</th><th class="r">Rabatt</th><th class="r">Betrag</th><th class="r">USt.</th></tr></thead>
         <tbody>
-          ${text ? `<tr><td></td><td>${esc(text)}</td><td></td><td class="r">0,00</td><td class="r">0,00</td><td></td><td class="r">0,00</td><td class="r">${fmt(satz)}</td></tr>` : ""}
+          ${text ? `<tr><td>${esc(text)}</td><td></td><td class="r">0,00</td><td class="r">0,00</td><td></td><td class="r">0,00</td><td class="r">${fmt(satz)}</td></tr>` : ""}
           ${aufteilen ? Object.entries(preise.ARTEN).map(([k, titel]) => {
             const teil = pos.filter((p) => p.art === k);
             if (!teil.length) return "";
-            return `<tr class="dok-block"><td></td><td colspan="7">${titel}</td></tr>
+            return `<tr class="dok-block"><td colspan="7">${titel}</td></tr>
               ${teil.map(zeile).join("")}
-              <tr class="dok-zwischen"><td></td><td colspan="5">Zwischensumme ${titel}</td><td class="r">${z2(summe[k])}</td><td></td></tr>
-              ${rabatt[k] ? `${nachlassZeile(k)}<tr class="dok-zwischen"><td></td><td colspan="5">Summe ${titel}</td><td class="r">${z2(summe[k] - rabatt[k])}</td><td></td></tr>` : ""}`;
+              <tr class="dok-zwischen"><td colspan="5">Zwischensumme ${titel}</td><td class="r">${z2(summe[k])}</td><td></td></tr>
+              ${rabatt[k] ? `${nachlassZeile(k)}<tr class="dok-zwischen"><td colspan="5">Summe ${titel}</td><td class="r">${z2(summe[k] - rabatt[k])}</td><td></td></tr>` : ""}`;
           }).join("") : pos.map(zeile).join("") + (rabatte ? `
-            <tr class="dok-zwischen"><td></td><td colspan="5">Zwischensumme</td><td class="r">${z2(waren)}</td><td></td></tr>
+            <tr class="dok-zwischen"><td colspan="5">Zwischensumme</td><td class="r">${z2(waren)}</td><td></td></tr>
             ${Object.keys(preise.ARTEN).map(nachlassZeile).join("")}
-            <tr class="dok-zwischen"><td></td><td colspan="5">Summe nach Nachlass</td><td class="r">${z2(netto)}</td><td></td></tr>` : "")}
+            <tr class="dok-zwischen"><td colspan="5">Summe nach Nachlass</td><td class="r">${z2(netto)}</td><td></td></tr>` : "")}
         </tbody>
       </table>
 
