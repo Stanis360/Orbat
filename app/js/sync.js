@@ -38,22 +38,40 @@ async function roh(pfad, optionen = {}, ms = 60000) {
 }
 
 // Fotos: eigene hochladen, fehlende von anderen Geräten holen
+let fotosLaufen = false;
 async function fotosAbgleichen() {
-  for (const id of store.getMeta("fotoUpload", [])) {
-    const rec = store.get(id);
-    const blob = rec && (await store.fotoHolen(id));
-    if (blob) {
-      const res = await roh("/api/foto/" + id, { method: "PUT", body: blob, headers: { "Content-Type": "image/jpeg" } });
-      if (!res.ok) throw new Error("Foto-Upload fehlgeschlagen " + res.status);
+  if (fotosLaufen) return;
+  fotosLaufen = true;
+  try {
+    const hoch = store.getMeta("fotoUpload", []);
+    let n = 0;
+    for (const id of hoch) {
+      setzen({ fotos: `Fotos hochladen ${++n}/${hoch.length}` });
+      const rec = store.get(id);
+      const blob = rec && (await store.fotoHolen(id));
+      if (blob) {
+        const res = await roh("/api/foto/" + id, { method: "PUT", body: blob, headers: { "Content-Type": "image/jpeg" } }, 90000);
+        if (!res.ok) throw new Error("Foto-Upload fehlgeschlagen " + res.status);
+      }
+      await store.fotoHochgeladen(id);
     }
-    await store.fotoHochgeladen(id);
-    setzen({});
-  }
-  const da = await store.fotoVorhanden();
-  const fehlend = store.liste("foto", (f) => !da.has(f.id)).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 30);
-  for (const f of fehlend) {
-    const res = await roh("/api/foto/" + f.id);
-    if (res.ok) await store.fotoSpeichern(f.id, await res.blob(), false);
+    const da = await store.fotoVorhanden();
+    const fehlend = store.liste("foto", (f) => !da.has(f.id)).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 30);
+    n = 0;
+    for (const f of fehlend) {
+      setzen({ fotos: `Fotos laden ${++n}/${fehlend.length}` });
+      try {
+        const res = await roh("/api/foto/" + f.id, {}, 45000);
+        if (res.ok) await store.fotoSpeichern(f.id, await res.blob(), false);
+      } catch {
+        // dieses Foto beim nächsten Sync noch einmal versuchen
+      }
+    }
+  } catch {
+    // Upload hat nicht geklappt – beim nächsten Sync erneut
+  } finally {
+    fotosLaufen = false;
+    setzen({ fotos: "" });
   }
 }
 
@@ -85,14 +103,22 @@ export async function jetzt() {
     do {
       nochmal = false;
       const gesendet = store.ungesendet();
-      const erg = await anfrage("/api/sync", { since: store.getMeta("seq", 0), changes: gesendet });
-      await store.syncErgebnis(gesendet, erg.records || []);
-      await store.setMeta("seq", erg.seq);
+      // Der Server liefert große Datenmengen in Portionen ("mehr")
+      let erg;
+      let teil = 0;
+      do {
+        erg = await anfrage("/api/sync", { since: store.getMeta("seq", 0), changes: teil ? [] : gesendet }, 60000);
+        await store.syncErgebnis(teil ? [] : gesendet, erg.records || []);
+        await store.setMeta("seq", erg.seq);
+        if (erg.mehr) setzen({ text: `Synchronisiere … (${erg.rest} offen)` });
+        teil++;
+      } while (erg.mehr);
     } while (nochmal);
-    await fotosAbgleichen();
     const zuletzt = new Date();
     await store.setMeta("zuletztSync", zuletzt.toISOString());
     setzen({ zustand: "ok", text: "Synchronisiert", zuletzt });
+    // Fotos in voller Größe danach im Hintergrund – blockiert den Daten-Sync nicht
+    fotosAbgleichen();
   } catch (e) {
     setzen({
       zustand: "offline",

@@ -37,6 +37,7 @@ sync.beiStatus((s) => {
   else if (s.zustand === "ok" && !s.wartend) { klasse = "gruen"; text = "Aktuell"; }
   else if (s.wartend) { klasse = "orange"; text = `${s.wartend} offen`; }
   else if (s.zustand === "aus") { klasse = "grau"; text = "Kein Sync"; }
+  if (s.fotos && s.zustand !== "laeuft") { klasse = "blau"; text = s.fotos.replace(/^Fotos (laden|hochladen) /, "Fotos "); }
   syncKnopf.className = "sync " + klasse;
   syncKnopf.querySelector("b").textContent = text;
   syncKnopf.title = s.text + (s.zuletzt ? ` – zuletzt ${s.zuletzt.toLocaleString("de-DE")}` : "");

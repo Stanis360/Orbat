@@ -85,7 +85,13 @@ function sync({ since = 0, changes = [] }) {
     }
   }
   if (geaendert) speichern();
-  const neu = Object.values(bestand.records).filter((r) => r._seq > since);
+  // In Portionen ausliefern, damit langsame Verbindungen (Handy unterwegs) nicht abbrechen
+  const neu = Object.values(bestand.records).filter((r) => r._seq > since).sort((a, b) => a._seq - b._seq);
+  const PORTION = 200;
+  if (neu.length > PORTION) {
+    const teil = neu.slice(0, PORTION);
+    return { seq: teil[teil.length - 1]._seq, records: teil, mehr: true, rest: neu.length - PORTION };
+  }
   return { seq: bestand.seq, records: neu };
 }
 
