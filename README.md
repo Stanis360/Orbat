@@ -9,6 +9,7 @@ Sobald ein Gerät den **kleinen Server auf deinem PC zu Hause** erreicht, gleich
 - **Grundriss zeichnen**: Wände, Fenster, Türen, Hilfslinien und Raumnamen. Die Längen erscheinen automatisch, und eine Wand lässt sich auch exakt per Zahl auf Länge bringen. Alles rastet im 10-cm-Raster und an vorhandenen Ecken ein. Zoomen geht mit zwei Fingern oder dem Mausrad, außerdem gibt es Rückgängig und den Export als Bild (PNG).
 - **Preisliste** (einmal anlegen, dann nur noch auswählen):
   - **Materialien** mit Einheit, Einkaufspreis, Kundenpreis, Kategorie, Lieferant und Artikelnummer. Fehlt der Kundenpreis, rechnet die App ihn automatisch aus Einkauf + Aufschlag aus (Standard 20 %, einstellbar).
+  - **Vorbereitete Preisliste**: Die Datei `app/vorlagen/preisliste.txt` kommt mit der App mit. In der Preisliste übernimmt der Knopf „📦 Vorbereitete Preisliste übernehmen“ alles, was neu ist oder sich geändert hat, mit einem Tipp.
   - **Ganze Liste einfügen**: Zeilen in Excel markieren, kopieren und einfügen, fertig. Vorhandene Materialien werden dabei aktualisiert. Ein **„-“ als Kundenpreis** bedeutet „wird nicht verrechnet“, z.B. für Silikon-Tuben, wenn der Kunde pro lm Silikon zahlt.
   - Material **ohne Kundenpreis** erscheint nicht auf Angebot und Rechnung. Es bleibt aber auf der Baustelle, in der Bestellliste und bei den Einkaufskosten. Die Preisliste lässt sich auch als Excel-Datei (CSV) speichern, bearbeiten und wieder einfügen.
   - **Stundensätze** (z.B. Facharbeiter 55 €/h, Helfer 38,50 €/h), einer davon als Standard

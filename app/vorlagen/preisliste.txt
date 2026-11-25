@@ -1,0 +1,37 @@
+# Vorbereitete Preisliste – wird in der App unter Preisliste mit einem Knopf übernommen.
+# Format: Name; Einheit; Einkauf; Kundenpreis; Kategorie; Lieferant; Artikelnummer; Material/Arbeit
+# Arbeitspreise
+Fliesen 30 × 60 cm; m²; ; 36,00; Fliesenverlegung; ; ; Arbeit
+Fliesen 60 × 60 cm; m²; ; 38,00; Fliesenverlegung; ; ; Arbeit
+Fliesen 60 × 120 cm; m²; ; 43,00; Fliesenverlegung; ; ; Arbeit
+Fliesen 120 × 120 cm; m²; ; 48,00; Fliesenverlegung; ; ; Arbeit
+Großformat über 120 × 120 cm; Std.; ; 42,00; Fliesenverlegung; ; ; Arbeit
+Stufen und Setzstufen; lfm; ; 38,00; Treppen und Sockel; ; ; Arbeit
+Stufensockel; lfm; ; 18,00; Treppen und Sockel; ; ; Arbeit
+Podeste verlegen; m²; ; 42,00; Treppen und Sockel; ; ; Arbeit
+Sockel verlegen; lfm; ; 12,50; Treppen und Sockel; ; ; Arbeit
+Silikonfugen; lfm; ; 4,50; Treppen und Sockel; ; ; Arbeit
+Grundierung; m²; ; 3,20; Untergrundvorbereitung und Abdichtung; ; ; Arbeit
+Abdichtung; m²; ; 22,50; Untergrundvorbereitung und Abdichtung; ; ; Arbeit
+Spachteln; Std.; ; 42,00; Untergrundvorbereitung und Abdichtung; ; ; Arbeit
+Ausgleichen; Std.; ; 42,00; Untergrundvorbereitung und Abdichtung; ; ; Arbeit
+Fliesenabbruch; Std.; ; 42,00; Abbruch und Sonderarbeiten; ; ; Arbeit
+Estrichabbruch; Std.; ; 42,00; Abbruch und Sonderarbeiten; ; ; Arbeit
+Regiearbeiten; Std.; ; 42,00; Abbruch und Sonderarbeiten; ; ; Arbeit
+Reparaturarbeiten; Std.; ; 42,00; Abbruch und Sonderarbeiten; ; ; Arbeit
+Gehrung schneiden; lfm; ; 22,00; Abbruch und Sonderarbeiten; ; ; Arbeit
+# Terrassenzubehör
+Stelzlager PR0 15–30 mm; Stk; 2,60; 4,40; Terrassenzubehör; ; 000199893; Material
+Stelzlager PR1 30–65 mm; Stk; 2,98; 5,05; Terrassenzubehör; ; 000194893; Material
+Stelzlager PR2 65–155 mm; Stk; 3,72; 6,30; Terrassenzubehör; ; 000195893; Material
+Stelzlager PR3 155–420 mm; Stk; 5,96; 10,10; Terrassenzubehör; ; 000193893; Material
+Stelzlager-Kopf PR0 Aluprofil/Holz; Stk; 0,80; 1,35; Terrassenzubehör; ; 000200893; Material
+Stelzlager-Kopf PR0 Fliesen; Stk; 0,80; 1,35; Terrassenzubehör; ; 000201893; Material
+Stelzlager-Kopf PR1–PR3 Aluprofil; Stk; 0,80; 1,35; Terrassenzubehör; ; 000163893; Material
+Stelzlager-Kopf PR1–PR3 Fliesen; Stk; 0,80; 1,35; Terrassenzubehör; ; 000192893; Material
+Aluschiene 60,5×25 mm (2 m); lfm; 8,85; 15,00; Terrassenzubehör; ; 000181893; Material
+Dichtung Aluschiene 200 m; Rolle; 179,95; 305,00; Terrassenzubehör; ; 000182893; Material
+Dichtung Aluschiene 50 m; Rolle; 89,68; 152,00; Terrassenzubehör; ; 000189893; Material
+Verbindungsstück Aluschiene; Stk; 0,38; 0,65; Terrassenzubehör; ; 000183893; Material
+Wandabstandhalter Edelstahl; Stk; 1,83; 3,10; Terrassenzubehör; ; 000117893; Material
+Wandabstandhalter Polypropylen; Stk; 0,62; 1,05; Terrassenzubehör; ; 000153893; Material

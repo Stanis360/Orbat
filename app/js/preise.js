@@ -333,6 +333,7 @@ function tabArtikel(ziel) {
   let gruppe = null;
   ziel.innerHTML = `
     <div class="knopfreihe oben">
+      <button class="btn primaer" id="vorlage" hidden>📦 Vorbereitete Preisliste übernehmen</button>
       <button class="btn primaer" id="einfuegen">📥 Liste einfügen</button>
       <button class="btn" id="csv" ${alle.length ? "" : "disabled"}>⬇ Als Excel (CSV)</button>
     </div>
@@ -359,6 +360,7 @@ function tabArtikel(ziel) {
   ziel.querySelectorAll("[data-art]").forEach((el) => (el.onclick = () => artikelBearbeiten(store.get(el.dataset.art))));
   $("#neu").onclick = () => artikelBearbeiten();
   $("#einfuegen").onclick = listeEinfuegen;
+  vorlageAnbieten();
   $("#csv").onclick = () => {
     const z = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const zeilen = [["Name", "Einheit", "Einkaufspreis", "Kundenpreis", "Kategorie", "Lieferant", "Artikelnummer"],
@@ -407,6 +409,42 @@ async function artikelBearbeiten(a) {
   neuZeichnen();
 }
 
+// ----- Vorbereitete Preisliste, die mit der App mitkommt (vorlagen/preisliste.txt) -----
+// Bietet nur an, was neu ist oder sich geändert hat.
+function unterschiede(liste) {
+  const felder = ["einheit", "ek", "vk", "kategorie", "artnr", "art"];
+  return liste.filter((neu) => {
+    const alt = artikelNachName(neu.name);
+    if (!alt) return true;
+    return felder.some((k) => neu[k] != null && String(neu[k]) !== String(k === "art" ? artikelArt(alt) : alt[k] ?? ""));
+  });
+}
+
+async function vorlageAnbieten() {
+  const knopf = $("#vorlage");
+  if (!knopf) return;
+  let liste;
+  try {
+    const res = await fetch("vorlagen/preisliste.txt", { cache: "no-cache" });
+    if (!res.ok) return;
+    liste = listeLesen((await res.text()).split("\n").filter((z) => !z.trim().startsWith("#")).join("\n"));
+  } catch { return; }
+  const offen = unterschiede(liste);
+  if (!offen.length || !document.body.contains(knopf)) return;
+  const neu = offen.filter((a) => !artikelNachName(a.name)).length;
+  knopf.hidden = false;
+  knopf.textContent = `📦 Vorbereitete Preisliste übernehmen (${[neu && neu + " neu", offen.length - neu && offen.length - neu + " geändert"].filter(Boolean).join(", ")})`;
+  knopf.onclick = async () => {
+    if (!confirm(`${offen.length} Einträge in die Preisliste übernehmen?${offen.length - neu ? " Bei vorhandenen werden die Preise aktualisiert." : ""}`)) return;
+    knopf.disabled = true;
+    for (const a of offen) {
+      const alt = artikelNachName(a.name);
+      await store.speichern({ ...(alt || { typ: "artikel", einheit: "Stk" }), ...a });
+    }
+    neuZeichnen();
+  };
+}
+
 // ----- Ganze Liste einfügen (aus Excel, Word, Text) -----
 const SPALTEN = {
   name: /^(name|bezeichnung|material|artikel|text|beschreibung)/i,
@@ -417,7 +455,7 @@ const SPALTEN = {
   lieferant: /^(lieferant|händler|haendler|hersteller)/i,
   artnr: /^(art|artikelnummer|art\.?-?nr|nummer|nr)/i,
 };
-const STANDARD_REIHENFOLGE = ["name", "einheit", "ek", "vk", "kategorie", "lieferant", "artnr"];
+const STANDARD_REIHENFOLGE = ["name", "einheit", "ek", "vk", "kategorie", "lieferant", "artnr", "art"];
 
 export function listeLesen(text) {
   const zeilen = text.split(/\r?\n/).map((z) => z.trim()).filter(Boolean);
@@ -436,6 +474,8 @@ export function listeLesen(text) {
     const w = teilen(z);
     const a = {};
     reihenfolge.forEach((k, i) => { if (k && w[i] != null && w[i] !== "") a[k] = w[i]; });
+    if (a.art) a.art = /arbeit|leistung/i.test(a.art) ? "arbeit" : /material/i.test(a.art) ? "material" : undefined;
+    if (!a.art) delete a.art;
     if (a.ek) a.ek = geld(a.ek);
     // "-" beim Kundenpreis = wird nicht verrechnet (kein automatischer Aufschlag)
     if (a.vk && /^[-–—]$/.test(a.vk.trim())) { a.vk = ""; a.nichtVerrechnen = true; }
